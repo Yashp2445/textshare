@@ -3,16 +3,17 @@ import { SocketProvider } from "@/components/SocketProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VantaBackground } from "@/components/VantaBackground";
+import { HeaderNav } from "@/components/HeaderNav";
 import { Lock } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LiveShare — Real-Time Text & File Sharing",
-  description: "Instant collaborative live text editor and drag-and-drop file sharing with private group rooms, QR code sharing, and auto-cleanup.",
-  keywords: ["text share", "live pastebin", "real-time text sharing", "file sharing", "collaborative editor", "private group code"],
+  title: "LiveShare — Real-Time Text, File Sharing & Scientific Calculator",
+  description: "Instant collaborative live text editor, drag-and-drop file sharing, and scientific calculator with private group rooms.",
+  keywords: ["text share", "live pastebin", "scientific calculator", "real-time text sharing", "file sharing", "collaborative editor"],
   openGraph: {
-    title: "LiveShare — Real-Time Text & File Sharing",
-    description: "Instant collaborative live text editor and drag-and-drop file sharing with private group rooms.",
+    title: "LiveShare — Real-Time Text, File Sharing & Scientific Calculator",
+    description: "Instant collaborative live text editor and scientific calculator with private group rooms.",
     type: "website",
   },
 };
@@ -32,7 +33,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -44,7 +45,7 @@ export default function RootLayout({
               <header className="app-header">
                 <div className="header-inner">
                   <a href="/" className="logo">
-                    <div className="logo-icon-box glow-amber">
+                    <div className="logo-icon-box glow-violet">
                       <svg
                         width="20"
                         height="20"
@@ -62,9 +63,12 @@ export default function RootLayout({
                     <span className="logo-text">LiveShare</span>
                   </a>
 
+                  {/* Header Segmented Control Navigation */}
+                  <HeaderNav />
+
                   <nav className="nav-actions">
                     <a href="/group/create" className="btn btn-nav glow-btn">
-                      <Lock size={14} className="text-amber" />
+                      <Lock size={14} className="text-violet" />
                       <span>Create Private Group</span>
                     </a>
                     <ThemeToggle />

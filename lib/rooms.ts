@@ -71,7 +71,6 @@ export class RoomManager {
     const now = Date.now();
     roomClients.set(clientId, now);
 
-    // Clean up heartbeats older than 6 seconds
     const STALE_TIMEOUT = 6000;
     for (const [id, lastSeen] of roomClients.entries()) {
       if (now - lastSeen > STALE_TIMEOUT) {
@@ -106,11 +105,11 @@ export class RoomManager {
   }
 
   public static createPrivateRoom(accessCode: string): string {
-    const roomId = Math.random().toString(36).substring(2, 15);
+    const roomId = accessCode.trim();
     this.rooms.set(roomId, {
       id: roomId,
       isPublic: false,
-      accessCode,
+      accessCode: roomId,
       content: '',
       files: [],
       lastActive: Date.now(),
@@ -119,16 +118,29 @@ export class RoomManager {
   }
 
   public static getRoom(roomId: string): Room | undefined {
-    if (!this.rooms.has(roomId) && roomId === 'public') {
-      this.rooms.set('public', {
-        id: 'public',
-        isPublic: true,
-        content: '',
-        files: [],
-        lastActive: Date.now(),
-      });
+    const cleanId = roomId.trim();
+    if (!this.rooms.has(cleanId)) {
+      if (cleanId === 'public') {
+        this.rooms.set('public', {
+          id: 'public',
+          isPublic: true,
+          content: '',
+          files: [],
+          lastActive: Date.now(),
+        });
+      } else {
+        // Auto-create/restore private room so serverless lambda instances across Vercel never drop room access
+        this.rooms.set(cleanId, {
+          id: cleanId,
+          isPublic: false,
+          accessCode: cleanId,
+          content: '',
+          files: [],
+          lastActive: Date.now(),
+        });
+      }
     }
-    return this.rooms.get(roomId);
+    return this.rooms.get(cleanId);
   }
 
   public static updateRoomContent(roomId: string, content: string): boolean {
@@ -233,8 +245,6 @@ export class RoomManager {
     if (!this.io) return;
 
     this.io.on('connection', (socket: Socket) => {
-      let currentRoomId: string | null = null;
-
       socket.on('join_room', (data: { roomId: string; accessCode?: string }, callback) => {
         const { roomId, accessCode } = data;
         const room = this.getRoom(roomId);
@@ -244,7 +254,7 @@ export class RoomManager {
           return;
         }
 
-        if (!room.isPublic && room.accessCode !== accessCode) {
+        if (!room.isPublic && room.accessCode && room.accessCode !== accessCode) {
           if (callback) callback({ error: 'Invalid access code' });
           return;
         }
@@ -257,7 +267,6 @@ export class RoomManager {
         });
 
         socket.join(roomId);
-        currentRoomId = roomId;
         room.lastActive = Date.now();
 
         const count = Math.max(1, this.io!.sockets.adapter.rooms.get(roomId)?.size || 1);
@@ -273,17 +282,9 @@ export class RoomManager {
         }
       });
 
-      socket.on('disconnecting', () => {
-        socket.rooms.forEach((r) => {
-          if (r !== socket.id) {
-            setTimeout(() => this.broadcastUserCount(r), 100);
-          }
-        });
-      });
-
       socket.on('text_change', (data: { roomId: string; content: string }) => {
         const { roomId, content } = data;
-        const room = this.rooms.get(roomId);
+        const room = this.getRoom(roomId);
         
         if (!socket.rooms.has(roomId)) return;
 
