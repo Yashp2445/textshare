@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SocketProvider } from "@/components/SocketProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { VantaBackground } from "@/components/VantaBackground";
 import { Lock } from "lucide-react";
 import "./globals.css";
 
@@ -38,11 +39,12 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <SocketProvider>
+            <VantaBackground />
             <div className="app">
               <header className="app-header">
                 <div className="header-inner">
                   <a href="/" className="logo">
-                    <div className="logo-icon-box">
+                    <div className="logo-icon-box glow-amber">
                       <svg
                         width="20"
                         height="20"
@@ -61,8 +63,8 @@ export default function RootLayout({
                   </a>
 
                   <nav className="nav-actions">
-                    <a href="/group/create" className="btn btn-nav">
-                      <Lock size={14} />
+                    <a href="/group/create" className="btn btn-nav glow-btn">
+                      <Lock size={14} className="text-amber" />
                       <span>Create Private Group</span>
                     </a>
                     <ThemeToggle />

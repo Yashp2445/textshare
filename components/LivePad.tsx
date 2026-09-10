@@ -472,7 +472,6 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
         onClear={handleClear}
         onDownloadTxt={handleDownloadTxt}
         onOpenQr={() => setIsQrOpen(true)}
-        onOpenShortcuts={() => setIsShortcutsOpen(true)}
         copied={copied}
       />
 

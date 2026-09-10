@@ -3,13 +3,10 @@ import { ShieldCheck, Zap, Lock, RefreshCw, FileUp } from "lucide-react";
 
 export function SeoSection() {
   return (
-    <section className="seo-section" aria-label="About LiveShare">
+    <section className="seo-section" aria-label="LiveShare Features">
       <div className="seo-container">
         <header className="seo-header">
           <h2 className="seo-title">Instant Real-Time Text & File Sharing</h2>
-          <p className="seo-subtitle">
-            LiveShare is a frictionless, real-time collaboration tool engineered for fast temporary text sharing and file transfers without signups.
-          </p>
         </header>
 
         <div className="seo-grid">

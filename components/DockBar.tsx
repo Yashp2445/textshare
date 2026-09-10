@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy, Trash2, Download, QrCode, Lock, Keyboard, Check } from "lucide-react";
+import { Dock, DockItem, DockSeparator } from "@/components/animated-dock";
+import { Copy, Trash2, Download, QrCode, Lock, Check } from "lucide-react";
 
 interface DockBarProps {
   onCopy: () => void;
   onClear: () => void;
   onDownloadTxt: () => void;
   onOpenQr: () => void;
-  onOpenShortcuts: () => void;
   copied: boolean;
 }
 
@@ -17,73 +17,71 @@ export function DockBar({
   onClear,
   onDownloadTxt,
   onOpenQr,
-  onOpenShortcuts,
   copied,
 }: DockBarProps) {
+  const [activeTab, setActiveTab] = useState<string>("");
+
   return (
-    <div className="dock-container">
-      <div className="dock-bar">
-        {/* Content Group */}
-        <button 
-          className={`dock-item ${copied ? "active-accent" : ""}`} 
-          onClick={onCopy} 
-          aria-label="Copy Text"
-        >
-          {copied ? <Check size={18} /> : <Copy size={18} />}
-          <span className="dock-tooltip">{copied ? "Copied!" : "Copy Text"}</span>
-        </button>
+    <Dock>
+      {/* Group 1: Content Actions */}
+      <DockItem
+        label={copied ? "Copied!" : "Copy Text"}
+        active={copied || activeTab === "copy"}
+        onClick={() => {
+          setActiveTab("copy");
+          onCopy();
+        }}
+      >
+        {copied ? <Check className="h-5 w-5 text-amber" /> : <Copy className="h-5 w-5" />}
+      </DockItem>
 
-        <button 
-          className="dock-item dock-item-danger" 
-          onClick={onClear} 
-          aria-label="Clear Text"
-        >
-          <Trash2 size={18} />
-          <span className="dock-tooltip">Clear Text</span>
-        </button>
+      <DockItem
+        label="Clear Text"
+        isDanger
+        active={activeTab === "clear"}
+        onClick={() => {
+          setActiveTab("clear");
+          onClear();
+        }}
+      >
+        <Trash2 className="h-5 w-5" />
+      </DockItem>
 
-        <button 
-          className="dock-item" 
-          onClick={onDownloadTxt} 
-          aria-label="Download Text"
-        >
-          <Download size={18} />
-          <span className="dock-tooltip">Download (.txt)</span>
-        </button>
+      <DockItem
+        label="Download (.txt)"
+        active={activeTab === "download"}
+        onClick={() => {
+          setActiveTab("download");
+          onDownloadTxt();
+        }}
+      >
+        <Download className="h-5 w-5" />
+      </DockItem>
 
-        <div className="dock-divider" />
+      <DockSeparator />
 
-        {/* Room & Sharing Group */}
-        <button 
-          className="dock-item dock-item-accent" 
-          onClick={onOpenQr} 
-          aria-label="QR Code & Share Link"
-        >
-          <QrCode size={18} />
-          <span className="dock-tooltip">Share / QR Code</span>
-        </button>
+      {/* Group 2: Room & Sharing Actions */}
+      <DockItem
+        label="QR Share"
+        active={activeTab === "qr"}
+        onClick={() => {
+          setActiveTab("qr");
+          onOpenQr();
+        }}
+      >
+        <QrCode className="h-5 w-5 text-amber" />
+      </DockItem>
 
-        <a 
-          href="/group/create" 
-          className="dock-item" 
-          aria-label="Create Private Group"
-        >
-          <Lock size={18} />
-          <span className="dock-tooltip">New Private Room</span>
-        </a>
-
-        <div className="dock-divider" />
-
-        {/* Info & Helper Group */}
-        <button 
-          className="dock-item" 
-          onClick={onOpenShortcuts} 
-          aria-label="Keyboard Shortcuts"
-        >
-          <Keyboard size={18} />
-          <span className="dock-tooltip">Shortcuts (⌘K)</span>
-        </button>
-      </div>
-    </div>
+      <DockItem
+        label="New Private Room"
+        active={activeTab === "private"}
+        onClick={() => {
+          setActiveTab("private");
+          window.location.href = "/group/create";
+        }}
+      >
+        <Lock className="h-5 w-5" />
+      </DockItem>
+    </Dock>
   );
 }
