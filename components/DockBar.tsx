@@ -32,7 +32,7 @@ export function DockBar({
           onCopy();
         }}
       >
-        {copied ? <Check className="h-5 w-5 text-amber" /> : <Copy className="h-5 w-5" />}
+        {copied ? <Check className="h-5 w-5 text-violet" /> : <Copy className="h-5 w-5" />}
       </DockItem>
 
       <DockItem
@@ -69,7 +69,7 @@ export function DockBar({
           onOpenQr();
         }}
       >
-        <QrCode className="h-5 w-5 text-amber" />
+        <QrCode className="h-5 w-5 text-violet" />
       </DockItem>
 
       <DockItem

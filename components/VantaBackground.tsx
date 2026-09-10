@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import * as THREE from "three";
-// @ts-ignore - vanta has no TypeScript definitions by default
+// @ts-ignore
 import FOG from "vanta/dist/vanta.fog.min";
 
 export function VantaBackground() {
@@ -29,13 +29,13 @@ export function VantaBackground() {
         gyroControls: false,
         minHeight: 200.00,
         minWidth: 200.00,
-        highlightColor: isDark ? 0xf59e0b : 0xd97706,
-        midtoneColor: isDark ? 0x162030 : 0xe5e2d8,
-        lowlightColor: isDark ? 0x080c14 : 0xedeae0,
-        baseColor: isDark ? 0x0b0f17 : 0xf8f7f4,
-        blurFactor: 0.6,
-        speed: 1.0,
-        zoom: 0.85,
+        highlightColor: isDark ? 0xa855f7 : 0x8b5cf6,
+        midtoneColor: isDark ? 0x2e1065 : 0xf3e8ff,
+        lowlightColor: isDark ? 0x060709 : 0xf7f6f4,
+        baseColor: isDark ? 0x08080a : 0xf7f6f4,
+        blurFactor: 0.75,
+        speed: 0.9,
+        zoom: 0.8,
       });
     } catch (err) {
       console.error("Vanta initialization error:", err);

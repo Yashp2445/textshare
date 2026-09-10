@@ -5,6 +5,7 @@ import { useSocket } from "./SocketProvider";
 import { DockBar } from "./DockBar";
 import { QrModal } from "./QrModal";
 import { ShortcutsModal } from "./ShortcutsModal";
+import { LanguageSelector } from "./LanguageSelector";
 import { Users, Clock, FileUp, Download, Shield, QrCode } from "lucide-react";
 
 interface SharedFile {
@@ -25,6 +26,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
   const { socket, isConnected, isFallbackMode } = useSocket();
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<SharedFile[]>([]);
+  const [language, setLanguage] = useState("text");
   const [isTyping, setIsTyping] = useState(false);
   const [activeUsers, setActiveUsers] = useState(1);
   const [uploading, setUploading] = useState(false);
@@ -238,11 +240,12 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
   // Download .txt file
   const handleDownloadTxt = () => {
     if (!content) return;
+    const ext = language === "javascript" ? "js" : language === "typescript" ? "ts" : language === "python" ? "py" : language === "json" ? "json" : language === "html" ? "html" : language === "css" ? "css" : "txt";
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `liveshare_${roomId}_${Date.now()}.txt`;
+    link.download = `liveshare_${roomId}_${Date.now()}.${ext}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -344,7 +347,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
           {/* Top Status Bar */}
           <div className="editor-top-bar">
             <div className="room-badge">
-              <Shield size={13} className="text-amber" />
+              <Shield size={13} className="text-violet" />
               <span>Room: <strong>{roomId}</strong></span>
               {accessCode && <span className="access-tag">Private</span>}
             </div>
@@ -359,7 +362,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
               {/* Presence Counter */}
               <div className="presence-badge" title="Active room participants">
                 <Users size={13} />
-                <span>{activeUsers} Online</span>
+                <span className="online-count-value">{activeUsers} Online</span>
               </div>
 
               {/* Connection Indicator */}
@@ -395,12 +398,14 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
             spellCheck={false}
           />
           
-          {/* Bottom Bar: Word Count & Metrics */}
+          {/* Bottom Bar: Language Selector & Metrics */}
           <div className="editor-metrics-bar">
             <div className="metrics-group">
-              <span>{wordCount} words, {charCount} chars</span>
+              <LanguageSelector language={language} onChange={setLanguage} />
               <span className="metrics-divider"></span>
-              <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+              <span className="metrics-numbers">{wordCount} words, {charCount} chars</span>
+              <span className="metrics-divider"></span>
+              <span className="metrics-cursor">Ln {cursorPos.line}, Col {cursorPos.col}</span>
             </div>
 
             <button 
