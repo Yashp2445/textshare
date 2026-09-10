@@ -21,7 +21,6 @@ export interface Room {
   lastActive: number;
 }
 
-// Global rooms store so state persists across serverless function re-invocations in the same process instance
 const globalRooms = globalThis as unknown as {
   __rooms_map?: Map<string, Room>;
   __file_buffers?: Map<string, Buffer>;
@@ -29,7 +28,6 @@ const globalRooms = globalThis as unknown as {
 
 if (!globalRooms.__rooms_map) {
   globalRooms.__rooms_map = new Map<string, Room>();
-  // Initialize default public room
   globalRooms.__rooms_map.set('public', {
     id: 'public',
     isPublic: true,
@@ -49,7 +47,6 @@ export class RoomManager {
   private static fileBuffers: Map<string, Buffer> = globalRooms.__file_buffers!;
   
   public static getUploadsDir(): string {
-    // On Vercel / serverless, process.cwd() might be read-only, so use OS temp directory if needed
     if (process.env.VERCEL) {
       return path.join(os.tmpdir(), 'textshare_uploads');
     }
@@ -59,11 +56,9 @@ export class RoomManager {
   public static async initialize(io: Server) {
     this.io = io;
     
-    // Ensure uploads directory exists
     const uploadsDir = this.getUploadsDir();
     await fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
 
-    // Ensure public room exists
     if (!this.rooms.has('public')) {
       this.rooms.set('public', {
         id: 'public',
@@ -110,7 +105,6 @@ export class RoomManager {
     room.content = content;
     room.lastActive = Date.now();
 
-    // If socket server is initialized, broadcast update
     if (this.io) {
       this.io.to(roomId).emit('text_update', { content });
     }
@@ -120,7 +114,6 @@ export class RoomManager {
   public static async addFileToRoom(roomId: string, file: SharedFile, buffer?: Buffer) {
     const room = this.getRoom(roomId);
     if (room) {
-      // Store clean version in room (without buffer attached to JSON responses)
       const fileMeta: SharedFile = {
         id: file.id,
         originalFilename: file.originalFilename,
@@ -136,20 +129,57 @@ export class RoomManager {
         this.fileBuffers.set(file.id, buffer);
       }
 
-      // Broadcast if Socket.io is active
       if (this.io) {
         this.io.to(roomId).emit('file_shared', fileMeta);
       }
     }
   }
 
+  public static async deleteFileFromRoom(roomId: string, fileId: string): Promise<boolean> {
+    const room = this.getRoom(roomId);
+    if (!room) return false;
+
+    const fileIndex = room.files.findIndex((f) => f.id === fileId);
+    if (fileIndex !== -1) {
+      room.files.splice(fileIndex, 1);
+      room.lastActive = Date.now();
+      
+      this.fileBuffers.delete(fileId);
+      const filePath = path.join(this.getUploadsDir(), fileId);
+      await fs.unlink(filePath).catch(() => {});
+
+      if (this.io) {
+        this.io.to(roomId).emit('file_deleted', { fileId });
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public static async clearRoomFiles(roomId: string): Promise<boolean> {
+    const room = this.getRoom(roomId);
+    if (!room) return false;
+
+    for (const file of room.files) {
+      this.fileBuffers.delete(file.id);
+      const filePath = path.join(this.getUploadsDir(), file.id);
+      await fs.unlink(filePath).catch(() => {});
+    }
+
+    room.files = [];
+    room.lastActive = Date.now();
+
+    if (this.io) {
+      this.io.to(roomId).emit('files_cleared');
+    }
+    return true;
+  }
+
   public static async getFileData(fileId: string): Promise<Buffer | null> {
-    // First check in-memory cache
     if (this.fileBuffers.has(fileId)) {
       return this.fileBuffers.get(fileId)!;
     }
 
-    // Fallback to disk
     try {
       const uploadsDir = this.getUploadsDir();
       const filePath = path.join(uploadsDir, path.basename(fileId));
@@ -206,6 +236,16 @@ export class RoomManager {
           room.lastActive = Date.now();
           socket.to(roomId).emit('text_update', { content });
         }
+      });
+
+      socket.on('delete_file', async (data: { roomId: string; fileId: string }) => {
+        if (!socket.rooms.has(data.roomId)) return;
+        await this.deleteFileFromRoom(data.roomId, data.fileId);
+      });
+
+      socket.on('clear_files', async (data: { roomId: string }) => {
+        if (!socket.rooms.has(data.roomId)) return;
+        await this.clearRoomFiles(data.roomId);
       });
     });
   }
