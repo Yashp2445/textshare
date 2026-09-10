@@ -23,10 +23,32 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ line: 0, col: 0 });
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastLocalTypingTime = useRef<number>(0);
   const postTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate stats
+  const charCount = content.length;
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
+  // Track cursor position (Line & Column)
+  const updateCursorPos = () => {
+    if (!textareaRef.current) return;
+    if (!content) {
+      setCursorPos({ line: 0, col: 0 });
+      return;
+    }
+    const pos = textareaRef.current.selectionStart || 0;
+    const textBefore = content.slice(0, pos);
+    const lines = textBefore.split("\n");
+    const line = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+    setCursorPos({ line, col });
+  };
 
   // ── Polling / Serverless Fallback Sync ──
   const fetchRoomState = useCallback(async () => {
@@ -43,7 +65,6 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
 
       const data = await res.json();
       if (data.success && data.room) {
-        // Prevent overwriting text if local user typed very recently (within 1.2s)
         if (Date.now() - lastLocalTypingTime.current > 1200) {
           if (data.room.content !== content) {
             setContent(data.room.content || "");
@@ -60,16 +81,14 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
     }
   }, [roomId, accessCode, onAuthFailure, content]);
 
-  // Handle Socket.IO vs Fallback Mode Syncing
+  // Syncing lifecycle
   useEffect(() => {
     if (isFallbackMode || !socket || !isConnected) {
-      // Use HTTP Polling Sync mode for Vercel
       fetchRoomState();
       const interval = setInterval(fetchRoomState, 1500);
       return () => clearInterval(interval);
     }
 
-    // Use Socket.IO mode for Localhost / Custom server
     socket.emit("join_room", { roomId, accessCode }, (res: any) => {
       if (res?.error) {
         if (onAuthFailure) onAuthFailure();
@@ -102,11 +121,11 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
     const newContent = e.target.value;
     setContent(newContent);
     lastLocalTypingTime.current = Date.now();
+    updateCursorPos();
 
     if (!isFallbackMode && socket && isConnected) {
       socket.emit("text_change", { roomId, content: newContent });
     } else {
-      // Serverless sync: post to API
       if (postTimeoutRef.current) clearTimeout(postTimeoutRef.current);
       postTimeoutRef.current = setTimeout(async () => {
         try {
@@ -119,6 +138,41 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
           // Ignore transient errors
         }
       }, 300);
+    }
+  };
+
+  // Clear handler
+  const handleClear = () => {
+    const newContent = "";
+    setContent(newContent);
+    lastLocalTypingTime.current = Date.now();
+    setCursorPos({ line: 0, col: 0 });
+
+    if (!isFallbackMode && socket && isConnected) {
+      socket.emit("text_change", { roomId, content: newContent });
+    } else {
+      if (postTimeoutRef.current) clearTimeout(postTimeoutRef.current);
+      postTimeoutRef.current = setTimeout(async () => {
+        try {
+          await fetch(`/api/room/${roomId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: newContent, accessCode }),
+          });
+        } catch {}
+      }, 300);
+    }
+  };
+
+  // Copy handler
+  const handleCopy = async () => {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Failed to copy text", err);
     }
   };
 
@@ -139,7 +193,6 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
 
       const json = await res.json();
       if (res.ok && json.file) {
-        // If in fallback mode, update files state directly
         if (isFallbackMode) {
           setFiles((prev) => {
             if (prev.some((f) => f.id === json.file.id)) return prev;
@@ -176,25 +229,51 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
       {/* Main Text Editor */}
       <div className="pad-editor-section">
         <textarea
+          ref={textareaRef}
           className="editor-textarea"
           placeholder="Start typing to share instantly..."
           value={content}
           onChange={handleTextChange}
+          onKeyUp={updateCursorPos}
+          onClick={updateCursorPos}
+          onSelect={updateCursorPos}
           spellCheck={false}
         />
+        
+        {/* Footer Status Bar */}
         <div className="status-bar">
-          <div className="status-indicator">
-            <div className={`status-dot ${isConnected ? "connected" : ""}`} />
-            {isConnected ? "Connected" : "Reconnecting..."}
+          <div className="status-metrics">
+            <span>{wordCount} words, {charCount} chars</span>
+            <span className="metrics-divider"></span>
+            <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
           </div>
-          <div className={`typing-indicator ${isTyping ? "active" : ""}`}>
-            Someone is typing...
-          </div>
-          {roomId !== "public" && (
-            <div style={{ marginLeft: "auto", fontFamily: "var(--font-mono)" }}>
-              Room: {roomId}
+
+          <div className="status-right-actions">
+            {isTyping && (
+              <span className="typing-indicator-text">Someone is typing...</span>
+            )}
+            
+            <div className="status-indicator">
+              <div className={`status-dot ${isConnected ? "connected" : ""}`} />
+              <span>{isConnected ? "Connected" : "Reconnecting..."}</span>
             </div>
-          )}
+
+            <button 
+              className="footer-btn btn-clear" 
+              onClick={handleClear}
+              title="Clear text"
+            >
+              Clear
+            </button>
+
+            <button 
+              className="footer-btn btn-copy" 
+              onClick={handleCopy}
+              title="Copy text to clipboard"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
         </div>
       </div>
 
