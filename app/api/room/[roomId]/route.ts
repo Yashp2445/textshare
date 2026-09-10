@@ -9,6 +9,7 @@ export async function GET(
     const { roomId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const accessCode = searchParams.get('accessCode') || undefined;
+    const clientId = searchParams.get('clientId') || undefined;
 
     const room = RoomManager.getRoom(roomId);
 
@@ -20,6 +21,9 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid access code' }, { status: 403 });
     }
 
+    // Register active user heartbeat
+    const activeUsers = RoomManager.registerHeartbeat(roomId, clientId);
+
     return NextResponse.json({
       success: true,
       room: {
@@ -28,6 +32,7 @@ export async function GET(
         content: room.content,
         files: room.files,
         lastActive: room.lastActive,
+        activeUsers,
       },
     });
   } catch (error) {
@@ -42,7 +47,7 @@ export async function POST(
   try {
     const { roomId } = await params;
     const body = await request.json();
-    const { content, accessCode, action, fileId } = body;
+    const { content, accessCode, action, fileId, clientId } = body;
 
     const room = RoomManager.getRoom(roomId);
 
@@ -54,21 +59,24 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid access code' }, { status: 403 });
     }
 
+    // Register active user heartbeat
+    const activeUsers = RoomManager.registerHeartbeat(roomId, clientId);
+
     if (action === 'clear_files') {
       await RoomManager.clearRoomFiles(roomId);
-      return NextResponse.json({ success: true, files: [] });
+      return NextResponse.json({ success: true, files: [], activeUsers });
     }
 
     if (action === 'delete_file' && fileId) {
       await RoomManager.deleteFileFromRoom(roomId, fileId);
-      return NextResponse.json({ success: true, files: room.files });
+      return NextResponse.json({ success: true, files: room.files, activeUsers });
     }
 
     if (typeof content === 'string') {
       RoomManager.updateRoomContent(roomId, content);
     }
 
-    return NextResponse.json({ success: true, content: room.content });
+    return NextResponse.json({ success: true, content: room.content, activeUsers });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update room' }, { status: 500 });
   }

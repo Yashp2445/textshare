@@ -5,8 +5,7 @@ import { useSocket } from "./SocketProvider";
 import { DockBar } from "./DockBar";
 import { QrModal } from "./QrModal";
 import { ShortcutsModal } from "./ShortcutsModal";
-import { SeoSection } from "./SeoSection";
-import { Users, Clock, FileUp, Download, Trash2, Shield, QrCode } from "lucide-react";
+import { Users, Clock, FileUp, Download, Shield, QrCode } from "lucide-react";
 
 interface SharedFile {
   id: string;
@@ -36,6 +35,19 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
+  // Persistent Client ID for active heartbeat counting
+  const clientId = useRef<string>(
+    typeof window !== "undefined"
+      ? (sessionStorage.getItem("ls_client_id") || Math.random().toString(36).substring(2, 10))
+      : "client_node"
+  ).current;
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !sessionStorage.getItem("ls_client_id")) {
+      sessionStorage.setItem("ls_client_id", clientId);
+    }
+  }, [clientId]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastLocalTypingTime = useRef<number>(0);
@@ -63,8 +75,8 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
   // ── Polling / Serverless Fallback Sync ──
   const fetchRoomState = useCallback(async () => {
     try {
-      const query = accessCode ? `?accessCode=${encodeURIComponent(accessCode)}` : "";
-      const res = await fetch(`/api/room/${roomId}${query}`);
+      const query = accessCode ? `&accessCode=${encodeURIComponent(accessCode)}` : "";
+      const res = await fetch(`/api/room/${roomId}?clientId=${clientId}${query}`);
       
       if (res.status === 403 || res.status === 404) {
         if (onAuthFailure) onAuthFailure();
@@ -85,11 +97,14 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
         if (data.room.files) {
           setFiles(data.room.files);
         }
+        if (data.room.activeUsers) {
+          setActiveUsers(data.room.activeUsers);
+        }
       }
     } catch {
       // Ignore transient network errors
     }
-  }, [roomId, accessCode, onAuthFailure, content]);
+  }, [roomId, accessCode, clientId, onAuthFailure, content]);
 
   // Syncing lifecycle
   useEffect(() => {
@@ -107,6 +122,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
       if (res) {
         setContent(res.content || "");
         setFiles(res.files || []);
+        if (res.activeUsers) setActiveUsers(res.activeUsers);
       }
     });
 
@@ -114,6 +130,12 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
       setContent(data.content);
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 1000);
+    });
+
+    socket.on("user_count_change", (data: { count: number }) => {
+      if (data.count) {
+        setActiveUsers(data.count);
+      }
     });
 
     socket.on("file_shared", (file: SharedFile) => {
@@ -130,6 +152,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
 
     return () => {
       socket.off("text_update");
+      socket.off("user_count_change");
       socket.off("file_shared");
       socket.off("file_deleted");
       socket.off("files_cleared");
@@ -168,7 +191,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
           await fetch(`/api/room/${roomId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: newContent, accessCode }),
+            body: JSON.stringify({ content: newContent, accessCode, clientId }),
           });
         } catch {
           // Ignore transient errors
@@ -193,7 +216,7 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
           await fetch(`/api/room/${roomId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: newContent, accessCode }),
+            body: JSON.stringify({ content: newContent, accessCode, clientId }),
           });
         } catch {}
       }, 300);
@@ -489,9 +512,6 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
-
-      {/* Genuine SEO Content Section */}
-      <SeoSection />
     </div>
   );
 }

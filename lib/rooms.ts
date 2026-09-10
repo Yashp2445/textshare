@@ -24,6 +24,7 @@ export interface Room {
 const globalRooms = globalThis as unknown as {
   __rooms_map?: Map<string, Room>;
   __file_buffers?: Map<string, Buffer>;
+  __room_heartbeats?: Map<string, Map<string, number>>;
 };
 
 if (!globalRooms.__rooms_map) {
@@ -41,16 +42,47 @@ if (!globalRooms.__file_buffers) {
   globalRooms.__file_buffers = new Map<string, Buffer>();
 }
 
+if (!globalRooms.__room_heartbeats) {
+  globalRooms.__room_heartbeats = new Map<string, Map<string, number>>();
+}
+
 export class RoomManager {
   private static io?: Server;
   private static rooms: Map<string, Room> = globalRooms.__rooms_map!;
   private static fileBuffers: Map<string, Buffer> = globalRooms.__file_buffers!;
+  private static roomHeartbeats: Map<string, Map<string, number>> = globalRooms.__room_heartbeats!;
   
   public static getUploadsDir(): string {
     if (process.env.VERCEL) {
       return path.join(os.tmpdir(), 'textshare_uploads');
     }
     return path.join(process.cwd(), 'data', 'tmp_uploads');
+  }
+
+  public static registerHeartbeat(roomId: string, clientId?: string): number {
+    if (!clientId) clientId = 'anon_' + Math.random().toString(36).substring(2, 8);
+
+    let roomClients = this.roomHeartbeats.get(roomId);
+    if (!roomClients) {
+      roomClients = new Map<string, number>();
+      this.roomHeartbeats.set(roomId, roomClients);
+    }
+
+    const now = Date.now();
+    roomClients.set(clientId, now);
+
+    // Clean up heartbeats older than 6 seconds
+    const STALE_TIMEOUT = 6000;
+    for (const [id, lastSeen] of roomClients.entries()) {
+      if (now - lastSeen > STALE_TIMEOUT) {
+        roomClients.delete(id);
+      }
+    }
+
+    const heartbeatCount = roomClients.size;
+    const socketCount = this.io ? (this.io.sockets.adapter.rooms.get(roomId)?.size || 0) : 0;
+
+    return Math.max(1, heartbeatCount, socketCount);
   }
 
   public static async initialize(io: Server) {
@@ -191,10 +223,18 @@ export class RoomManager {
     }
   }
 
+  private static broadcastUserCount(roomId: string) {
+    if (!this.io) return;
+    const count = Math.max(1, this.io.sockets.adapter.rooms.get(roomId)?.size || 1);
+    this.io.to(roomId).emit('user_count_change', { count });
+  }
+
   private static setupSocketListeners() {
     if (!this.io) return;
 
     this.io.on('connection', (socket: Socket) => {
+      let currentRoomId: string | null = null;
+
       socket.on('join_room', (data: { roomId: string; accessCode?: string }, callback) => {
         const { roomId, accessCode } = data;
         const room = this.getRoom(roomId);
@@ -210,19 +250,35 @@ export class RoomManager {
         }
 
         socket.rooms.forEach((r) => {
-          if (r !== socket.id) socket.leave(r);
+          if (r !== socket.id) {
+            socket.leave(r);
+            this.broadcastUserCount(r);
+          }
         });
 
         socket.join(roomId);
+        currentRoomId = roomId;
         room.lastActive = Date.now();
+
+        const count = Math.max(1, this.io!.sockets.adapter.rooms.get(roomId)?.size || 1);
+        this.broadcastUserCount(roomId);
 
         if (callback) {
           callback({
             success: true,
             content: room.content,
             files: room.files,
+            activeUsers: count,
           });
         }
+      });
+
+      socket.on('disconnecting', () => {
+        socket.rooms.forEach((r) => {
+          if (r !== socket.id) {
+            setTimeout(() => this.broadcastUserCount(r), 100);
+          }
+        });
       });
 
       socket.on('text_change', (data: { roomId: string; content: string }) => {
@@ -260,6 +316,7 @@ export class RoomManager {
 
         if (now - room.lastActive > INACTIVE_TIMEOUT) {
           this.rooms.delete(roomId);
+          this.roomHeartbeats.delete(roomId);
           
           for (const file of room.files) {
             this.fileBuffers.delete(file.id);
