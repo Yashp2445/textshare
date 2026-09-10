@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 
 export interface SharedFile {
   id: string;
@@ -8,6 +9,7 @@ export interface SharedFile {
   size: number;
   mimeType: string;
   uploadedAt: number;
+  buffer?: Buffer;
 }
 
 export interface Room {
@@ -19,34 +21,64 @@ export interface Room {
   lastActive: number;
 }
 
+// Global rooms store so state persists across serverless function re-invocations in the same process instance
+const globalRooms = globalThis as unknown as {
+  __rooms_map?: Map<string, Room>;
+  __file_buffers?: Map<string, Buffer>;
+};
+
+if (!globalRooms.__rooms_map) {
+  globalRooms.__rooms_map = new Map<string, Room>();
+  // Initialize default public room
+  globalRooms.__rooms_map.set('public', {
+    id: 'public',
+    isPublic: true,
+    content: '',
+    files: [],
+    lastActive: Date.now(),
+  });
+}
+
+if (!globalRooms.__file_buffers) {
+  globalRooms.__file_buffers = new Map<string, Buffer>();
+}
+
 export class RoomManager {
-  private static io: Server;
-  private static rooms: Map<string, Room> = new Map();
-  private static UPLOADS_DIR = path.join(process.cwd(), 'data', 'tmp_uploads');
+  private static io?: Server;
+  private static rooms: Map<string, Room> = globalRooms.__rooms_map!;
+  private static fileBuffers: Map<string, Buffer> = globalRooms.__file_buffers!;
+  
+  public static getUploadsDir(): string {
+    // On Vercel / serverless, process.cwd() might be read-only, so use OS temp directory if needed
+    if (process.env.VERCEL) {
+      return path.join(os.tmpdir(), 'textshare_uploads');
+    }
+    return path.join(process.cwd(), 'data', 'tmp_uploads');
+  }
 
   public static async initialize(io: Server) {
     this.io = io;
     
     // Ensure uploads directory exists
-    await fs.mkdir(this.UPLOADS_DIR, { recursive: true }).catch(() => {});
+    const uploadsDir = this.getUploadsDir();
+    await fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
 
-    // Initialize public room
-    this.rooms.set('public', {
-      id: 'public',
-      isPublic: true,
-      content: '',
-      files: [],
-      lastActive: Date.now(),
-    });
+    // Ensure public room exists
+    if (!this.rooms.has('public')) {
+      this.rooms.set('public', {
+        id: 'public',
+        isPublic: true,
+        content: '',
+        files: [],
+        lastActive: Date.now(),
+      });
+    }
 
     this.setupSocketListeners();
     this.startCleanupTask();
   }
 
   public static createPrivateRoom(accessCode: string): string {
-    // We use the access code itself as the room ID for simplicity,
-    // since we don't persist these, and they are randomly generated.
-    // However, generating a UUID for the room ID and keeping the code separate is safer.
     const roomId = Math.random().toString(36).substring(2, 15);
     this.rooms.set(roomId, {
       id: roomId,
@@ -60,25 +92,82 @@ export class RoomManager {
   }
 
   public static getRoom(roomId: string): Room | undefined {
+    if (!this.rooms.has(roomId) && roomId === 'public') {
+      this.rooms.set('public', {
+        id: 'public',
+        isPublic: true,
+        content: '',
+        files: [],
+        lastActive: Date.now(),
+      });
+    }
     return this.rooms.get(roomId);
   }
 
-  public static addFileToRoom(roomId: string, file: SharedFile) {
-    const room = this.rooms.get(roomId);
+  public static updateRoomContent(roomId: string, content: string): boolean {
+    const room = this.getRoom(roomId);
+    if (!room) return false;
+    room.content = content;
+    room.lastActive = Date.now();
+
+    // If socket server is initialized, broadcast update
+    if (this.io) {
+      this.io.to(roomId).emit('text_update', { content });
+    }
+    return true;
+  }
+
+  public static async addFileToRoom(roomId: string, file: SharedFile, buffer?: Buffer) {
+    const room = this.getRoom(roomId);
     if (room) {
-      room.files.push(file);
+      // Store clean version in room (without buffer attached to JSON responses)
+      const fileMeta: SharedFile = {
+        id: file.id,
+        originalFilename: file.originalFilename,
+        size: file.size,
+        mimeType: file.mimeType,
+        uploadedAt: file.uploadedAt,
+      };
+
+      room.files.push(fileMeta);
       room.lastActive = Date.now();
-      // Broadcast to room
-      this.io.to(roomId).emit('file_shared', file);
+
+      if (buffer) {
+        this.fileBuffers.set(file.id, buffer);
+      }
+
+      // Broadcast if Socket.io is active
+      if (this.io) {
+        this.io.to(roomId).emit('file_shared', fileMeta);
+      }
+    }
+  }
+
+  public static async getFileData(fileId: string): Promise<Buffer | null> {
+    // First check in-memory cache
+    if (this.fileBuffers.has(fileId)) {
+      return this.fileBuffers.get(fileId)!;
+    }
+
+    // Fallback to disk
+    try {
+      const uploadsDir = this.getUploadsDir();
+      const filePath = path.join(uploadsDir, path.basename(fileId));
+      const buffer = await fs.readFile(filePath);
+      this.fileBuffers.set(fileId, buffer);
+      return buffer;
+    } catch {
+      return null;
     }
   }
 
   private static setupSocketListeners() {
+    if (!this.io) return;
+
     this.io.on('connection', (socket: Socket) => {
-      
       socket.on('join_room', (data: { roomId: string; accessCode?: string }, callback) => {
         const { roomId, accessCode } = data;
-        const room = this.rooms.get(roomId);
+        const room = this.getRoom(roomId);
 
         if (!room) {
           if (callback) callback({ error: 'Room not found' });
@@ -90,7 +179,6 @@ export class RoomManager {
           return;
         }
 
-        // Leave previous rooms (except the socket's own ID room)
         socket.rooms.forEach((r) => {
           if (r !== socket.id) socket.leave(r);
         });
@@ -98,7 +186,6 @@ export class RoomManager {
         socket.join(roomId);
         room.lastActive = Date.now();
 
-        // Send current state to the joining client
         if (callback) {
           callback({
             success: true,
@@ -112,13 +199,11 @@ export class RoomManager {
         const { roomId, content } = data;
         const room = this.rooms.get(roomId);
         
-        // Security check: ensure socket is actually in this room
         if (!socket.rooms.has(roomId)) return;
 
         if (room) {
           room.content = content;
           room.lastActive = Date.now();
-          // Broadcast to everyone else in the room
           socket.to(roomId).emit('text_update', { content });
         }
       });
@@ -126,21 +211,19 @@ export class RoomManager {
   }
 
   private static startCleanupTask() {
-    // Check every hour for inactive rooms
     setInterval(async () => {
       const now = Date.now();
-      const INACTIVE_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
+      const INACTIVE_TIMEOUT = 12 * 60 * 60 * 1000;
 
       for (const [roomId, room] of this.rooms.entries()) {
-        if (roomId === 'public') continue; // Never delete public room
+        if (roomId === 'public') continue;
 
         if (now - room.lastActive > INACTIVE_TIMEOUT) {
-          // Room has been inactive. Delete it.
           this.rooms.delete(roomId);
           
-          // Delete associated files
           for (const file of room.files) {
-            const filePath = path.join(this.UPLOADS_DIR, file.id);
+            this.fileBuffers.delete(file.id);
+            const filePath = path.join(this.getUploadsDir(), file.id);
             await fs.unlink(filePath).catch(() => {});
           }
         }

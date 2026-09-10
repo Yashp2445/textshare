@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
 import path from 'path';
-
-const UPLOADS_DIR = path.join(process.cwd(), 'data', 'tmp_uploads');
+import { RoomManager } from '@/lib/rooms';
 
 export async function GET(
   request: NextRequest,
@@ -13,9 +11,11 @@ export async function GET(
     
     // Security: prevent directory traversal
     const safeFileId = path.basename(fileId);
-    const filePath = path.join(UPLOADS_DIR, safeFileId);
+    const fileBuffer = await RoomManager.getFileData(safeFileId);
 
-    const fileBuffer = await fs.readFile(filePath);
+    if (!fileBuffer) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
 
     // Get original filename from query if provided, else generic
     const url = new URL(request.url);

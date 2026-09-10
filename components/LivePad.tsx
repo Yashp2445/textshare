@@ -18,29 +18,71 @@ interface LivePadProps {
 }
 
 export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadProps) {
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, isFallbackMode } = useSocket();
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Connection & Sync
-  useEffect(() => {
-    if (!socket || !isConnected) return;
+  const lastLocalTypingTime = useRef<number>(0);
+  const postTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    socket.emit("join_room", { roomId, accessCode }, (res: any) => {
-      if (res.error) {
+  // ── Polling / Serverless Fallback Sync ──
+  const fetchRoomState = useCallback(async () => {
+    try {
+      const query = accessCode ? `?accessCode=${encodeURIComponent(accessCode)}` : "";
+      const res = await fetch(`/api/room/${roomId}${query}`);
+      
+      if (res.status === 403 || res.status === 404) {
         if (onAuthFailure) onAuthFailure();
         return;
       }
-      setContent(res.content || "");
-      setFiles(res.files || []);
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data.success && data.room) {
+        // Prevent overwriting text if local user typed very recently (within 1.2s)
+        if (Date.now() - lastLocalTypingTime.current > 1200) {
+          if (data.room.content !== content) {
+            setContent(data.room.content || "");
+            setIsTyping(true);
+            setTimeout(() => setIsTyping(false), 1000);
+          }
+        }
+        if (data.room.files) {
+          setFiles(data.room.files);
+        }
+      }
+    } catch {
+      // Ignore transient network errors
+    }
+  }, [roomId, accessCode, onAuthFailure, content]);
+
+  // Handle Socket.IO vs Fallback Mode Syncing
+  useEffect(() => {
+    if (isFallbackMode || !socket || !isConnected) {
+      // Use HTTP Polling Sync mode for Vercel
+      fetchRoomState();
+      const interval = setInterval(fetchRoomState, 1500);
+      return () => clearInterval(interval);
+    }
+
+    // Use Socket.IO mode for Localhost / Custom server
+    socket.emit("join_room", { roomId, accessCode }, (res: any) => {
+      if (res?.error) {
+        if (onAuthFailure) onAuthFailure();
+        return;
+      }
+      if (res) {
+        setContent(res.content || "");
+        setFiles(res.files || []);
+      }
     });
 
     socket.on("text_update", (data: { content: string }) => {
       setContent(data.content);
-      // Flash typing indicator
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 1000);
     });
@@ -53,14 +95,30 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
       socket.off("text_update");
       socket.off("file_shared");
     };
-  }, [socket, isConnected, roomId, accessCode, onAuthFailure]);
+  }, [socket, isConnected, isFallbackMode, roomId, accessCode, onAuthFailure, fetchRoomState]);
 
   // Handle local text changes
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
-    if (socket && isConnected) {
+    lastLocalTypingTime.current = Date.now();
+
+    if (!isFallbackMode && socket && isConnected) {
       socket.emit("text_change", { roomId, content: newContent });
+    } else {
+      // Serverless sync: post to API
+      if (postTimeoutRef.current) clearTimeout(postTimeoutRef.current);
+      postTimeoutRef.current = setTimeout(async () => {
+        try {
+          await fetch(`/api/room/${roomId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: newContent, accessCode }),
+          });
+        } catch {
+          // Ignore transient errors
+        }
+      }, 300);
     }
   };
 
@@ -74,11 +132,23 @@ export default function LivePad({ roomId, accessCode, onAuthFailure }: LivePadPr
     formData.append("roomId", roomId);
 
     try {
-      await fetch("/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      // The server will broadcast the 'file_shared' event, so we don't need to manually add it to state here.
+
+      const json = await res.json();
+      if (res.ok && json.file) {
+        // If in fallback mode, update files state directly
+        if (isFallbackMode) {
+          setFiles((prev) => {
+            if (prev.some((f) => f.id === json.file.id)) return prev;
+            return [...prev, json.file];
+          });
+        }
+      } else if (json.error) {
+        alert(json.error);
+      }
     } catch (err) {
       console.error("Upload failed", err);
       alert("Failed to upload file.");

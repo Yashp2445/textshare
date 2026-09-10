@@ -4,8 +4,6 @@ import path from 'path';
 import { generateFileId } from '@/lib/slug';
 import { RoomManager } from '@/lib/rooms';
 
-const UPLOADS_DIR = path.join(process.cwd(), 'data', 'tmp_uploads');
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -30,8 +28,9 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    await fs.mkdir(UPLOADS_DIR, { recursive: true }).catch(() => {});
-    await fs.writeFile(path.join(UPLOADS_DIR, fileId), buffer);
+    const uploadsDir = RoomManager.getUploadsDir();
+    await fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
+    await fs.writeFile(path.join(uploadsDir, fileId), buffer).catch(() => {});
 
     const sharedFile = {
       id: fileId,
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Add to room memory and broadcast
-    RoomManager.addFileToRoom(roomId, sharedFile);
+    await RoomManager.addFileToRoom(roomId, sharedFile, buffer);
 
     return NextResponse.json({ success: true, file: sharedFile }, { status: 201 });
   } catch (error) {
