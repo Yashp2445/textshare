@@ -1,14 +1,10 @@
-import { ColorPickerTool } from "@/components/tools/ColorPickerTool";
+import { DevToolsHub } from "@/components/DevToolsHub";
 
 export const metadata = {
-  title: "Color Picker & Palette Generator | LiveShare DevTools",
-  description: "Visual color picker and converter for HEX, RGB, HSL, CMYK with complementary and monochromatic palettes.",
+  title: "Color Picker & Palettes — Dev Utilities | LiveShare",
+  description: "HEX, RGB, HSL, CMYK conversion & color palette generator.",
 };
 
-export default function ColorPickerPage() {
-  return (
-    <div className="tool-page-wrapper">
-      <ColorPickerTool />
-    </div>
-  );
+export default function ColorToolPage() {
+  return <DevToolsHub />;
 }

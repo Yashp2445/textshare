@@ -1,14 +1,10 @@
-import { JwtDecoder } from "@/components/tools/JwtDecoder";
+import { DevToolsHub } from "@/components/DevToolsHub";
 
 export const metadata = {
-  title: "JWT Decoder | LiveShare DevTools",
-  description: "Decode JSON Web Token headers, payloads, and signatures instantly in your browser.",
+  title: "JWT Decoder — Dev Utilities | LiveShare",
+  description: "Decode JWT headers, payload claims & signature verification.",
 };
 
-export default function JwtDecoderPage() {
-  return (
-    <div className="tool-page-wrapper">
-      <JwtDecoder />
-    </div>
-  );
+export default function JwtToolPage() {
+  return <DevToolsHub />;
 }

@@ -1,14 +1,10 @@
-import { Base64UrlTool } from "@/components/tools/Base64UrlTool";
+import { DevToolsHub } from "@/components/DevToolsHub";
 
 export const metadata = {
-  title: "Base64 & URL Encoder/Decoder | LiveShare DevTools",
-  description: "Encode and decode Base64 and URL-encoded string components instantly client-side.",
+  title: "Base64 & URL Encoder — Dev Utilities | LiveShare",
+  description: "Encode and decode strings live with Base64 & URL encoding.",
 };
 
-export default function Base64UrlPage() {
-  return (
-    <div className="tool-page-wrapper">
-      <Base64UrlTool />
-    </div>
-  );
+export default function Base64ToolPage() {
+  return <DevToolsHub />;
 }

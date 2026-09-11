@@ -1,14 +1,10 @@
-import { BcryptTool } from "@/components/tools/BcryptTool";
+import { DevToolsHub } from "@/components/DevToolsHub";
 
 export const metadata = {
-  title: "Bcrypt Hasher & Verifier | LiveShare DevTools",
-  description: "Generate and verify client-side bcrypt password hashes with configurable salt cost factor.",
+  title: "Bcrypt Hasher & Verifier — Dev Utilities | LiveShare",
+  description: "Client-side password hashing and salt verification.",
 };
 
-export default function BcryptPage() {
-  return (
-    <div className="tool-page-wrapper">
-      <BcryptTool />
-    </div>
-  );
+export default function BcryptToolPage() {
+  return <DevToolsHub />;
 }

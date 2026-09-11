@@ -29,6 +29,11 @@ import {
   BookOpen,
   Cpu,
   Zap,
+  Type,
+  QrCode,
+  Lock,
+  FileSearch,
+  FileCheck,
 } from "lucide-react";
 import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 
@@ -38,18 +43,24 @@ export function HeaderNav() {
 
   const [calcDropdownOpen, setCalcDropdownOpen] = useState(false);
   const [fileDropdownOpen, setFileDropdownOpen] = useState(false);
+  const [sqlDropdownOpen, setSqlDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [elecDropdownOpen, setElecDropdownOpen] = useState(false);
   const [devDropdownOpen, setDevDropdownOpen] = useState(false);
 
-  const calcDropdownRef = useRef<HTMLDivElement>(null);
-  const fileDropdownRef = useRef<HTMLDivElement>(null);
-  const devDropdownRef = useRef<HTMLDivElement>(null);
+  const calcRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLDivElement>(null);
+  const sqlRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
+  const elecRef = useRef<HTMLDivElement>(null);
+  const devRef = useRef<HTMLDivElement>(null);
 
   const isCalc = pathname.startsWith("/calculator");
   const isFileTools = pathname.startsWith("/tools/file-tools");
   const isSqlTools = pathname.startsWith("/tools/sql-tools");
   const isLangTools = pathname.startsWith("/tools/language-tools");
   const isElecTools = pathname.startsWith("/tools/electronics-tools");
-  const isDevTool = pathname.startsWith("/tools/") && !isFileTools && !isSqlTools && !isLangTools && !isElecTools;
+  const isDevTools = pathname.startsWith("/tools/dev-tools") || pathname === "/tools/json" || pathname === "/tools/color" || pathname === "/tools/base64-url" || pathname === "/tools/jwt" || pathname === "/tools/bcrypt";
 
   // Listen for Cmd+K / Ctrl+K global keyboard shortcut
   useEffect(() => {
@@ -66,19 +77,25 @@ export function HeaderNav() {
   // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (calcDropdownRef.current && !calcDropdownRef.current.contains(e.target as Node)) {
-        setCalcDropdownOpen(false);
-      }
-      if (fileDropdownRef.current && !fileDropdownRef.current.contains(e.target as Node)) {
-        setFileDropdownOpen(false);
-      }
-      if (devDropdownRef.current && !devDropdownRef.current.contains(e.target as Node)) {
-        setDevDropdownOpen(false);
-      }
+      if (calcRef.current && !calcRef.current.contains(e.target as Node)) setCalcDropdownOpen(false);
+      if (fileRef.current && !fileRef.current.contains(e.target as Node)) setFileDropdownOpen(false);
+      if (sqlRef.current && !sqlRef.current.contains(e.target as Node)) setSqlDropdownOpen(false);
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangDropdownOpen(false);
+      if (elecRef.current && !elecRef.current.contains(e.target as Node)) setElecDropdownOpen(false);
+      if (devRef.current && !devRef.current.contains(e.target as Node)) setDevDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const closeAll = () => {
+    setCalcDropdownOpen(false);
+    setFileDropdownOpen(false);
+    setSqlDropdownOpen(false);
+    setLangDropdownOpen(false);
+    setElecDropdownOpen(false);
+    setDevDropdownOpen(false);
+  };
 
   const calculatorHighlights = [
     { href: "/calculator", label: "Calculator Hub (All 17)", icon: Calculator, desc: "Explore complete calculator suite" },
@@ -92,30 +109,59 @@ export function HeaderNav() {
 
   const fileToolsList = [
     { href: "/tools/file-tools", label: "File Tools Hub", icon: FolderArchive, desc: "Client-side processing suite" },
-    { href: "/tools/file-tools?tool=image", label: "Image Compressor & Convert", icon: ImageIcon, desc: "PNG, JPG, WebP with quality slider" },
+    { href: "/tools/file-tools?tool=image", label: "Image Compressor & Convert", icon: ImageIcon, desc: "PNG, JPG, WebP quality slider" },
+    { href: "/tools/file-tools?tool=resize", label: "Image Resizer", icon: ImageIcon, desc: "Resize dimensions & percentage scale" },
     { href: "/tools/file-tools?tool=csv-json", label: "CSV ↔ JSON Converter", icon: FileCode, desc: "Bi-directional parsing & format" },
+    { href: "/tools/file-tools?tool=pdf-tools", label: "PDF Merge & Split", icon: FileCheck, desc: "Combine & extract PDF pages" },
     { href: "/tools/file-tools?tool=doc-pdf", label: "Document to PDF Utility", icon: FileText, desc: "Local document exporter & notice" },
   ];
 
-  const devTools = [
-    { href: "/tools/sql-tools", label: "SQL Tools Hub", icon: Database, desc: "In-browser SQLite WASM, ERD & format" },
-    { href: "/tools/language-tools", label: "Programming Tools Hub", icon: Code2, desc: "Formatter, minifier, Carbon & cheatsheets" },
-    { href: "/tools/electronics-tools", label: "Electronics Tools Hub", icon: Cpu, desc: "Ohm's Law, resistors, 555 & logic gates" },
-    { href: "/tools/json", label: "JSON Formatter & Validator", icon: Code2, desc: "Format, validate & minify JSON" },
-    { href: "/tools/color", label: "Color Picker & Palettes", icon: Palette, desc: "HEX, RGB, HSL, CMYK & palettes" },
-    { href: "/tools/base64-url", label: "Base64 & URL Encoder", icon: Binary, desc: "Encode & decode strings live" },
-    { href: "/tools/jwt", label: "JWT Decoder", icon: KeyRound, desc: "Decode headers, payload & signature" },
-    { href: "/tools/bcrypt", label: "Bcrypt Hasher & Verifier", icon: ShieldCheck, desc: "Client-side password hashing" },
+  const sqlToolsList = [
+    { href: "/tools/sql-tools", label: "SQL Tools Hub", icon: Database, desc: "Explore all SQL utilities" },
+    { href: "/tools/sql-tools?tool=playground", label: "In-Browser SQL Sandbox", icon: Database, desc: "SQLite WASM database playground" },
+    { href: "/tools/sql-tools?tool=formatter", label: "SQL Formatter", icon: Terminal, desc: "Format & beautify SQL queries" },
+    { href: "/tools/sql-tools?tool=erd", label: "ER Diagram Generator", icon: Layers, desc: "Parse DDL to visual ER diagrams" },
+  ];
+
+  const langToolsList = [
+    { href: "/tools/language-tools", label: "Language Tools Hub", icon: Code2, desc: "Explore all programming tools" },
+    { href: "/tools/language-tools?tool=formatter", label: "Multi-Language Formatter", icon: Code2, desc: "JS, TS, CSS, HTML, JSON, Markdown" },
+    { href: "/tools/language-tools?tool=minifier", label: "Code Minifier (JS & CSS)", icon: Binary, desc: "Compress code with size stats" },
+    { href: "/tools/language-tools?tool=carbon", label: "Code to Image Generator", icon: Palette, desc: "Carbon-style code snippet cards" },
+    { href: "/tools/language-tools?tool=cheatsheet", label: "Developer Cheat Sheets", icon: BookOpen, desc: "Git, Regex, SQL joins, VS Code" },
+  ];
+
+  const elecToolsList = [
+    { href: "/tools/electronics-tools", label: "Electronics Tools Hub", icon: Cpu, desc: "Explore 11 electronics tools" },
+    { href: "/tools/electronics-tools?tool=resistor", label: "Resistor Color Code", icon: Cpu, desc: "Decode 4/5/6 color bands" },
+    { href: "/tools/electronics-tools?tool=ohms", label: "Ohm's Law Calculator", icon: Zap, desc: "V, I, R, P relationship wheel" },
+    { href: "/tools/electronics-tools?tool=555", label: "555 Timer Calculator", icon: Cpu, desc: "Astable & Monostable frequency" },
+    { href: "/tools/electronics-tools?tool=logic", label: "Logic Gate Simulator", icon: Layers, desc: "AND, OR, NOT, XOR signal flow" },
+    { href: "/tools/electronics-tools?tool=circuit", label: "Circuit Schematic Builder", icon: Cpu, desc: "Drag & drop visual circuit builder" },
+  ];
+
+  const devToolsList = [
+    { href: "/tools/dev-tools", label: "Dev Utilities Hub (All 10)", icon: Wrench, desc: "Explore complete dev utility suite" },
+    { href: "/tools/dev-tools?tool=json", label: "JSON Formatter & Validator", icon: Code2, desc: "Format, validate & minify JSON" },
+    { href: "/tools/dev-tools?tool=color", label: "Color Picker & Palettes", icon: Palette, desc: "HEX, RGB, HSL, CMYK & palettes" },
+    { href: "/tools/dev-tools?tool=base64", label: "Base64 & URL Encoder", icon: Binary, desc: "Encode & decode strings live" },
+    { href: "/tools/dev-tools?tool=jwt", label: "JWT Decoder", icon: KeyRound, desc: "Decode headers & payload claims" },
+    { href: "/tools/dev-tools?tool=bcrypt", label: "Bcrypt Hasher & Verifier", icon: ShieldCheck, desc: "Client-side password hashing" },
+    { href: "/tools/dev-tools?tool=wordcounter", label: "Word & Character Counter", icon: Type, desc: "Live word, char & reading time" },
+    { href: "/tools/dev-tools?tool=qr", label: "QR Code Generator", icon: QrCode, desc: "Generate & download QR images" },
+    { href: "/tools/dev-tools?tool=case", label: "Text Case Converter", icon: FileSearch, desc: "UPPER, lower, Title, camelCase" },
+    { href: "/tools/dev-tools?tool=password", label: "Password Generator", icon: Lock, desc: "Random secure passwords & strength" },
+    { href: "/tools/dev-tools?tool=lorem", label: "Lorem Ipsum Generator", icon: FileText, desc: "Placeholder text generator" },
   ];
 
   return (
     <>
       <nav className="header-segmented-nav" aria-label="Main Navigation">
-        {/* Global Search Button */}
+        {/* Global Search Button Pill */}
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="nav-segment-item flex items-center gap-1.5 text-violet font-semibold hover:bg-hover"
+          className="nav-segment-item flex items-center gap-1.5 text-violet font-semibold hover:bg-hover cursor-pointer"
           title="Global Tool Search (Cmd+K / Ctrl+K)"
         >
           <Search size={14} />
@@ -125,47 +171,31 @@ export function HeaderNav() {
           </kbd>
         </button>
 
+        {/* LivePad Link Pill */}
         <Link
           href="/"
-          className={`nav-segment-item ${!isCalc && !isFileTools && !isDevTool && !isSqlTools && !isLangTools && !isElecTools ? "active" : ""}`}
+          className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools ? "active" : ""}`}
         >
           <FileText size={14} />
           <span>LivePad</span>
         </Link>
 
-        {/* Calculator Hub Dropdown */}
-        <div className="nav-dropdown-wrapper" ref={calcDropdownRef}>
-          <div className="flex items-center">
-            <Link
-              href="/calculator"
-              className={`nav-segment-item ${isCalc ? "active" : ""}`}
-              onClick={() => {
-                setCalcDropdownOpen(false);
-                setFileDropdownOpen(false);
-                setDevDropdownOpen(false);
-              }}
-            >
-              <Calculator size={14} />
-              <span>Calculators</span>
-            </Link>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setCalcDropdownOpen((prev) => !prev);
-                setFileDropdownOpen(false);
-                setDevDropdownOpen(false);
-              }}
-              className="px-1 text-dim hover:text-main cursor-pointer"
-              aria-expanded={calcDropdownOpen}
-              aria-label="Toggle Calculator Menu"
-            >
-              <ChevronDown 
-                size={13} 
-                className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} 
-              />
-            </button>
-          </div>
+        {/* Calculators Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={calcRef}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !calcDropdownOpen;
+              closeAll();
+              setCalcDropdownOpen(next);
+            }}
+            className={`nav-segment-item ${isCalc ? "active" : ""}`}
+            aria-expanded={calcDropdownOpen}
+          >
+            <Calculator size={14} />
+            <span>Calculators</span>
+            <ChevronDown size={13} className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} />
+          </button>
 
           {calcDropdownOpen && (
             <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
@@ -180,12 +210,10 @@ export function HeaderNav() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={() => setCalcDropdownOpen(false)}
+                      onClick={closeAll}
                       className="nav-tools-dropdown-item"
                     >
-                      <div className="nav-tool-icon-box">
-                        <Icon size={15} />
-                      </div>
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
                       <div className="nav-tool-text-box">
                         <div className="nav-tool-title">{item.label}</div>
                         <div className="nav-tool-desc">{item.desc}</div>
@@ -198,39 +226,22 @@ export function HeaderNav() {
           )}
         </div>
 
-        {/* File Tools Dropdown */}
-        <div className="nav-dropdown-wrapper" ref={fileDropdownRef}>
-          <div className="flex items-center">
-            <Link
-              href="/tools/file-tools"
-              className={`nav-segment-item ${isFileTools ? "active" : ""}`}
-              onClick={() => {
-                setCalcDropdownOpen(false);
-                setFileDropdownOpen(false);
-                setDevDropdownOpen(false);
-              }}
-            >
-              <FolderArchive size={14} />
-              <span>File Tools</span>
-            </Link>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setFileDropdownOpen((prev) => !prev);
-                setCalcDropdownOpen(false);
-                setDevDropdownOpen(false);
-              }}
-              className="px-1 text-dim hover:text-main cursor-pointer"
-              aria-expanded={fileDropdownOpen}
-              aria-label="Toggle File Tools Menu"
-            >
-              <ChevronDown 
-                size={13} 
-                className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} 
-              />
-            </button>
-          </div>
+        {/* File Tools Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={fileRef}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !fileDropdownOpen;
+              closeAll();
+              setFileDropdownOpen(next);
+            }}
+            className={`nav-segment-item ${isFileTools ? "active" : ""}`}
+            aria-expanded={fileDropdownOpen}
+          >
+            <FolderArchive size={14} />
+            <span>File Tools</span>
+            <ChevronDown size={13} className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} />
+          </button>
 
           {fileDropdownOpen && (
             <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
@@ -245,12 +256,10 @@ export function HeaderNav() {
                     <Link
                       key={tool.href}
                       href={tool.href}
-                      onClick={() => setFileDropdownOpen(false)}
+                      onClick={closeAll}
                       className="nav-tools-dropdown-item"
                     >
-                      <div className="nav-tool-icon-box">
-                        <Icon size={15} />
-                      </div>
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
                       <div className="nav-tool-text-box">
                         <div className="nav-tool-title">{tool.label}</div>
                         <div className="nav-tool-desc">{tool.desc}</div>
@@ -263,43 +272,179 @@ export function HeaderNav() {
           )}
         </div>
 
-        {/* Dev & Specialized Tools Dropdown */}
-        <div className="nav-dropdown-wrapper" ref={devDropdownRef}>
+        {/* SQL Tools Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={sqlRef}>
           <button
             type="button"
             onClick={() => {
-              setDevDropdownOpen((prev) => !prev);
-              setCalcDropdownOpen(false);
-              setFileDropdownOpen(false);
+              const next = !sqlDropdownOpen;
+              closeAll();
+              setSqlDropdownOpen(next);
             }}
-            className={`nav-segment-item ${isDevTool || isSqlTools || isLangTools || isElecTools ? "active" : ""}`}
+            className={`nav-segment-item ${isSqlTools ? "active" : ""}`}
+            aria-expanded={sqlDropdownOpen}
+          >
+            <Database size={14} />
+            <span>SQL Tools</span>
+            <ChevronDown size={13} className={`chevron-icon ${sqlDropdownOpen ? "open" : ""}`} />
+          </button>
+
+          {sqlDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>SQL Utilities</span>
+                <span className="text-violet font-semibold">SQLite WASM</span>
+              </div>
+              <div className="nav-tools-dropdown-list">
+                {sqlToolsList.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link
+                      key={tool.href}
+                      href={tool.href}
+                      onClick={closeAll}
+                      className="nav-tools-dropdown-item"
+                    >
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{tool.label}</div>
+                        <div className="nav-tool-desc">{tool.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Language Tools Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={langRef}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !langDropdownOpen;
+              closeAll();
+              setLangDropdownOpen(next);
+            }}
+            className={`nav-segment-item ${isLangTools ? "active" : ""}`}
+            aria-expanded={langDropdownOpen}
+          >
+            <Code2 size={14} />
+            <span>Language Tools</span>
+            <ChevronDown size={13} className={`chevron-icon ${langDropdownOpen ? "open" : ""}`} />
+          </button>
+
+          {langDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>Programming Tools</span>
+                <span className="text-violet font-semibold">Client-Side</span>
+              </div>
+              <div className="nav-tools-dropdown-list">
+                {langToolsList.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link
+                      key={tool.href}
+                      href={tool.href}
+                      onClick={closeAll}
+                      className="nav-tools-dropdown-item"
+                    >
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{tool.label}</div>
+                        <div className="nav-tool-desc">{tool.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Electronics Tools Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={elecRef}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !elecDropdownOpen;
+              closeAll();
+              setElecDropdownOpen(next);
+            }}
+            className={`nav-segment-item ${isElecTools ? "active" : ""}`}
+            aria-expanded={elecDropdownOpen}
+          >
+            <Cpu size={14} />
+            <span>Electronics</span>
+            <ChevronDown size={13} className={`chevron-icon ${elecDropdownOpen ? "open" : ""}`} />
+          </button>
+
+          {elecDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>Electronics Suite</span>
+                <span className="text-violet font-semibold">11 Tools</span>
+              </div>
+              <div className="nav-tools-dropdown-list">
+                {elecToolsList.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link
+                      key={tool.href}
+                      href={tool.href}
+                      onClick={closeAll}
+                      className="nav-tools-dropdown-item"
+                    >
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{tool.label}</div>
+                        <div className="nav-tool-desc">{tool.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Dev Utilities Dropdown Pill */}
+        <div className="nav-dropdown-wrapper" ref={devRef}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !devDropdownOpen;
+              closeAll();
+              setDevDropdownOpen(next);
+            }}
+            className={`nav-segment-item ${isDevTools ? "active" : ""}`}
             aria-expanded={devDropdownOpen}
           >
             <Wrench size={14} />
-            <span>Dev & Electronics</span>
-            <ChevronDown 
-              size={13} 
-              className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} 
-            />
+            <span>Dev Utilities</span>
+            <ChevronDown size={13} className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} />
           </button>
 
           {devDropdownOpen && (
             <div className="nav-tools-dropdown-menu" style={{ width: "310px" }}>
-              <div className="nav-tools-dropdown-header">Developer & Engineering Suites</div>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>Dev & Utility Suite</span>
+                <span className="text-violet font-semibold">10 Tools</span>
+              </div>
               <div className="nav-tools-dropdown-list">
-                {devTools.map((tool) => {
+                {devToolsList.map((tool) => {
                   const Icon = tool.icon;
                   const active = pathname.startsWith(tool.href);
                   return (
                     <Link
                       key={tool.href}
                       href={tool.href}
-                      onClick={() => setDevDropdownOpen(false)}
+                      onClick={closeAll}
                       className={`nav-tools-dropdown-item ${active ? "selected" : ""}`}
                     >
-                      <div className="nav-tool-icon-box">
-                        <Icon size={15} />
-                      </div>
+                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
                       <div className="nav-tool-text-box">
                         <div className="nav-tool-title">{tool.label}</div>
                         <div className="nav-tool-desc">{tool.desc}</div>
