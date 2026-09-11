@@ -533,6 +533,8 @@ export const ALL_TOOLS: ToolRegistryItem[] = [
   },
 ];
 
+import { createPortal } from "react-dom";
+
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -541,8 +543,13 @@ interface GlobalSearchModalProps {
 export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -584,30 +591,29 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[2000] flex items-start justify-center pt-16 px-4 bg-black/60 backdrop-blur-md transition-opacity animate-fadeIn"
+      className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/75 backdrop-blur-md transition-opacity animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-panel border border-focus rounded-2xl shadow-dock overflow-hidden flex flex-col backdrop-blur-2xl transition-all"
+        className="w-full max-w-2xl bg-[#121620]/95 border border-white/15 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col backdrop-blur-3xl transition-all"
         style={{
-          background: "rgba(18, 22, 32, 0.96)",
-          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.85)",
+          boxShadow: "inset 0 1px 1.5px rgba(255, 255, 255, 0.2), 0 30px 90px rgba(0, 0, 0, 0.85)",
         }}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Search Header Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-dim">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/10 bg-white/[0.02]">
           <Search size={18} className="text-violet flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            className="w-full bg-transparent border-none outline-none text-main placeholder-muted text-base font-medium"
-            placeholder="Search 35+ tools across Calculators, File, SQL, Language & Electronics... (Press Esc to close)"
+            className="w-full bg-transparent border-none outline-none text-main placeholder:text-muted text-base font-semibold"
+            placeholder="Search 35+ tools (Calculators, SQL, Electronics, Dev...)"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -617,17 +623,18 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-md text-muted hover:text-main hover:bg-hover transition-colors"
+            className="px-2.5 py-1 text-[11px] font-mono rounded-md bg-surface border border-dim text-muted hover:text-main hover:border-violet transition-colors flex-shrink-0 cursor-pointer"
           >
-            <X size={16} />
+            ESC
           </button>
         </div>
 
         {/* Filtered Tool List */}
-        <div className="max-h-[420px] overflow-y-auto p-2 flex flex-col gap-1">
+        <div className="max-h-[440px] overflow-y-auto p-3 flex flex-col gap-2">
           {filteredTools.length === 0 ? (
-            <div className="py-10 text-center text-muted text-sm">
-              No matching tools found for "{query}".
+            <div className="py-12 text-center text-muted text-sm flex flex-col items-center gap-2">
+              <Search size={24} className="text-muted/50" />
+              <span>No tools matching "{query}"</span>
             </div>
           ) : (
             filteredTools.map((tool, index) => {
@@ -639,35 +646,33 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   key={tool.id}
                   onClick={() => handleSelect(tool)}
                   onMouseEnter={() => setSelectedIndex(index)}
-                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                  className={`flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all ${
                     isSelected
-                      ? "bg-accent-glow border border-accent/40 text-main"
-                      : "hover:bg-hover text-dim"
+                      ? "bg-violet/15 border-l-4 border-l-violet border-t border-r border-b border-violet/30 text-main shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                      : "bg-surface/30 hover:bg-surface/70 border border-transparent text-dim"
                   }`}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3.5 overflow-hidden">
                     <div
-                      className={`w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                         isSelected
-                          ? "bg-accent text-accent-inverse"
-                          : "bg-surface border border-dim text-violet"
+                          ? "bg-accent text-accent-inverse shadow-md"
+                          : "bg-surface border border-white/10 text-violet"
                       }`}
                     >
                       <Icon size={18} />
                     </div>
                     <div className="overflow-hidden">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-main text-sm">
-                          {tool.name}
-                        </span>
+                      <div className="font-bold text-main text-sm md:text-base tracking-tight">
+                        {tool.name}
                       </div>
-                      <div className="text-xs text-dim truncate">
+                      <div className="text-xs text-dim leading-relaxed truncate mt-0.5 font-normal">
                         {tool.description}
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface border border-dim text-muted uppercase tracking-wider flex-shrink-0 ml-3">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-violet/10 border border-violet/20 text-violet uppercase tracking-wider flex-shrink-0 ml-3">
                     {tool.category}
                   </span>
                 </div>
@@ -677,9 +682,9 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
         </div>
 
         {/* Footer Shortcut Legend */}
-        <div className="px-4 py-2.5 border-t border-dim flex items-center justify-between text-xs text-muted bg-surface/40">
-          <div className="flex items-center gap-3">
-            <span>
+        <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between text-xs text-muted bg-black/40">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 rounded bg-surface border border-dim font-mono text-[10px]">
                 ↑
               </kbd>{" "}
@@ -688,7 +693,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
               </kbd>{" "}
               Navigate
             </span>
-            <span>
+            <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 rounded bg-surface border border-dim font-mono text-[10px]">
                 ↵
               </kbd>{" "}
@@ -700,6 +705,8 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

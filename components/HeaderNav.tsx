@@ -48,12 +48,15 @@ export function HeaderNav() {
   const [elecDropdownOpen, setElecDropdownOpen] = useState(false);
   const [devDropdownOpen, setDevDropdownOpen] = useState(false);
 
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+
   const calcRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLDivElement>(null);
   const sqlRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
   const elecRef = useRef<HTMLDivElement>(null);
   const devRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const isCalc = pathname.startsWith("/calculator");
   const isFileTools = pathname.startsWith("/tools/file-tools");
@@ -83,6 +86,7 @@ export function HeaderNav() {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangDropdownOpen(false);
       if (elecRef.current && !elecRef.current.contains(e.target as Node)) setElecDropdownOpen(false);
       if (devRef.current && !devRef.current.contains(e.target as Node)) setDevDropdownOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -95,6 +99,7 @@ export function HeaderNav() {
     setLangDropdownOpen(false);
     setElecDropdownOpen(false);
     setDevDropdownOpen(false);
+    setMoreDropdownOpen(false);
   };
 
   const calculatorHighlights = [
@@ -156,307 +161,371 @@ export function HeaderNav() {
 
   return (
     <>
-      <nav className="header-segmented-nav" aria-label="Main Navigation">
-        {/* Global Search Button Pill */}
+      <div className="flex items-center gap-3">
+        {/* Distinct Search Field Trigger Button */}
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="nav-segment-item flex items-center gap-1.5 text-violet font-semibold hover:bg-hover cursor-pointer"
+          className="nav-search-trigger-btn"
           title="Global Tool Search (Cmd+K / Ctrl+K)"
         >
-          <Search size={14} />
-          <span className="hidden sm:inline">Search</span>
+          <Search size={15} className="text-violet flex-shrink-0" />
+          <span className="hidden md:inline font-medium">Search tools...</span>
           <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-surface border border-dim rounded text-muted">
             ⌘K
           </kbd>
         </button>
 
-        {/* LivePad Link Pill */}
-        <Link
-          href="/"
-          className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools ? "active" : ""}`}
-        >
-          <FileText size={14} />
-          <span>LivePad</span>
-        </Link>
-
-        {/* Calculators Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={calcRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !calcDropdownOpen;
-              closeAll();
-              setCalcDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isCalc ? "active" : ""}`}
-            aria-expanded={calcDropdownOpen}
+        {/* Cohesive Segmented Glass Navigation Bar */}
+        <nav className="header-segmented-nav" aria-label="Main Navigation">
+          {/* LivePad Link Segment */}
+          <Link
+            href="/"
+            className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools ? "active" : ""}`}
           >
-            <Calculator size={14} />
-            <span>Calculators</span>
-            <ChevronDown size={13} className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} />
-          </button>
+            <FileText size={14} />
+            <span>LivePad</span>
+          </Link>
 
-          {calcDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>Calculator Suite</span>
-                <span className="text-violet font-semibold">17 Tools</span>
-              </div>
-              <div className="nav-tools-dropdown-list">
-                {calculatorHighlights.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeAll}
-                      className="nav-tools-dropdown-item"
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{item.label}</div>
-                        <div className="nav-tool-desc">{item.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+          {/* Calculators Dropdown Segment */}
+          <div className="nav-dropdown-wrapper" ref={calcRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !calcDropdownOpen;
+                closeAll();
+                setCalcDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isCalc ? "active" : ""}`}
+              aria-expanded={calcDropdownOpen}
+            >
+              <Calculator size={14} />
+              <span>Calculators</span>
+              <ChevronDown size={13} className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} />
+            </button>
 
-        {/* File Tools Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={fileRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !fileDropdownOpen;
-              closeAll();
-              setFileDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isFileTools ? "active" : ""}`}
-            aria-expanded={fileDropdownOpen}
-          >
-            <FolderArchive size={14} />
-            <span>File Tools</span>
-            <ChevronDown size={13} className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} />
-          </button>
+            {calcDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Calculator Suite</span>
+                  <span className="text-violet font-semibold">17 Tools</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {calculatorHighlights.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{item.label}</div>
+                          <div className="nav-tool-desc">{item.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {fileDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>File Utilities</span>
-                <span className="text-violet font-semibold">Client-Side</span>
-              </div>
-              <div className="nav-tools-dropdown-list">
-                {fileToolsList.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={closeAll}
-                      className="nav-tools-dropdown-item"
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{tool.label}</div>
-                        <div className="nav-tool-desc">{tool.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+          {/* File Tools Dropdown Segment */}
+          <div className="nav-dropdown-wrapper" ref={fileRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !fileDropdownOpen;
+                closeAll();
+                setFileDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isFileTools ? "active" : ""}`}
+              aria-expanded={fileDropdownOpen}
+            >
+              <FolderArchive size={14} />
+              <span>File Tools</span>
+              <ChevronDown size={13} className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} />
+            </button>
 
-        {/* SQL Tools Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={sqlRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !sqlDropdownOpen;
-              closeAll();
-              setSqlDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isSqlTools ? "active" : ""}`}
-            aria-expanded={sqlDropdownOpen}
-          >
-            <Database size={14} />
-            <span>SQL Tools</span>
-            <ChevronDown size={13} className={`chevron-icon ${sqlDropdownOpen ? "open" : ""}`} />
-          </button>
+            {fileDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>File Utilities</span>
+                  <span className="text-violet font-semibold">Client-Side</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {fileToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {sqlDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>SQL Utilities</span>
-                <span className="text-violet font-semibold">SQLite WASM</span>
-              </div>
-              <div className="nav-tools-dropdown-list">
-                {sqlToolsList.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={closeAll}
-                      className="nav-tools-dropdown-item"
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{tool.label}</div>
-                        <div className="nav-tool-desc">{tool.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+          {/* SQL Tools Dropdown Segment */}
+          <div className="hidden xl:block nav-dropdown-wrapper" ref={sqlRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !sqlDropdownOpen;
+                closeAll();
+                setSqlDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isSqlTools ? "active" : ""}`}
+              aria-expanded={sqlDropdownOpen}
+            >
+              <Database size={14} />
+              <span>SQL Tools</span>
+              <ChevronDown size={13} className={`chevron-icon ${sqlDropdownOpen ? "open" : ""}`} />
+            </button>
 
-        {/* Language Tools Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={langRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !langDropdownOpen;
-              closeAll();
-              setLangDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isLangTools ? "active" : ""}`}
-            aria-expanded={langDropdownOpen}
-          >
-            <Code2 size={14} />
-            <span>Language Tools</span>
-            <ChevronDown size={13} className={`chevron-icon ${langDropdownOpen ? "open" : ""}`} />
-          </button>
+            {sqlDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>SQL Utilities</span>
+                  <span className="text-violet font-semibold">SQLite WASM</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {sqlToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {langDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>Programming Tools</span>
-                <span className="text-violet font-semibold">Client-Side</span>
-              </div>
-              <div className="nav-tools-dropdown-list">
-                {langToolsList.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={closeAll}
-                      className="nav-tools-dropdown-item"
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{tool.label}</div>
-                        <div className="nav-tool-desc">{tool.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+          {/* Language Tools Dropdown Segment */}
+          <div className="hidden xl:block nav-dropdown-wrapper" ref={langRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !langDropdownOpen;
+                closeAll();
+                setLangDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isLangTools ? "active" : ""}`}
+              aria-expanded={langDropdownOpen}
+            >
+              <Code2 size={14} />
+              <span>Language Tools</span>
+              <ChevronDown size={13} className={`chevron-icon ${langDropdownOpen ? "open" : ""}`} />
+            </button>
 
-        {/* Electronics Tools Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={elecRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !elecDropdownOpen;
-              closeAll();
-              setElecDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isElecTools ? "active" : ""}`}
-            aria-expanded={elecDropdownOpen}
-          >
-            <Cpu size={14} />
-            <span>Electronics</span>
-            <ChevronDown size={13} className={`chevron-icon ${elecDropdownOpen ? "open" : ""}`} />
-          </button>
+            {langDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Programming Tools</span>
+                  <span className="text-violet font-semibold">Client-Side</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {langToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {elecDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>Electronics Suite</span>
-                <span className="text-violet font-semibold">11 Tools</span>
-              </div>
-              <div className="nav-tools-dropdown-list">
-                {elecToolsList.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={closeAll}
-                      className="nav-tools-dropdown-item"
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{tool.label}</div>
-                        <div className="nav-tool-desc">{tool.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+          {/* Electronics Tools Dropdown Segment */}
+          <div className="hidden xl:block nav-dropdown-wrapper" ref={elecRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !elecDropdownOpen;
+                closeAll();
+                setElecDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isElecTools ? "active" : ""}`}
+              aria-expanded={elecDropdownOpen}
+            >
+              <Cpu size={14} />
+              <span>Electronics</span>
+              <ChevronDown size={13} className={`chevron-icon ${elecDropdownOpen ? "open" : ""}`} />
+            </button>
 
-        {/* Dev Utilities Dropdown Pill */}
-        <div className="nav-dropdown-wrapper" ref={devRef}>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !devDropdownOpen;
-              closeAll();
-              setDevDropdownOpen(next);
-            }}
-            className={`nav-segment-item ${isDevTools ? "active" : ""}`}
-            aria-expanded={devDropdownOpen}
-          >
-            <Wrench size={14} />
-            <span>Dev Utilities</span>
-            <ChevronDown size={13} className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} />
-          </button>
+            {elecDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Electronics Suite</span>
+                  <span className="text-violet font-semibold">11 Tools</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {elecToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {devDropdownOpen && (
-            <div className="nav-tools-dropdown-menu" style={{ width: "310px" }}>
-              <div className="nav-tools-dropdown-header flex justify-between items-center">
-                <span>Dev & Utility Suite</span>
-                <span className="text-violet font-semibold">10 Tools</span>
+          {/* Dev Utilities Dropdown Segment */}
+          <div className="nav-dropdown-wrapper" ref={devRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !devDropdownOpen;
+                closeAll();
+                setDevDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isDevTools ? "active" : ""}`}
+              aria-expanded={devDropdownOpen}
+            >
+              <Wrench size={14} />
+              <span>Dev Utilities</span>
+              <ChevronDown size={13} className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} />
+            </button>
+
+            {devDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "310px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Dev & Utility Suite</span>
+                  <span className="text-violet font-semibold">10 Tools</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {devToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    const active = pathname.startsWith(tool.href);
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className={`nav-tools-dropdown-item ${active ? "selected" : ""}`}
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="nav-tools-dropdown-list">
-                {devToolsList.map((tool) => {
-                  const Icon = tool.icon;
-                  const active = pathname.startsWith(tool.href);
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={closeAll}
-                      className={`nav-tools-dropdown-item ${active ? "selected" : ""}`}
-                    >
-                      <div className="nav-tool-icon-box"><Icon size={15} /></div>
-                      <div className="nav-tool-text-box">
-                        <div className="nav-tool-title">{tool.label}</div>
-                        <div className="nav-tool-desc">{tool.desc}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
+            )}
+          </div>
+
+          {/* Responsive Overflow 'More' Dropdown Segment (< 1280px) */}
+          <div className="xl:hidden nav-dropdown-wrapper" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !moreDropdownOpen;
+                closeAll();
+                setMoreDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isSqlTools || isLangTools || isElecTools ? "active" : ""}`}
+              aria-expanded={moreDropdownOpen}
+            >
+              <Wrench size={14} />
+              <span>More</span>
+              <ChevronDown size={13} className={`chevron-icon ${moreDropdownOpen ? "open" : ""}`} />
+            </button>
+
+            {moreDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "260px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Additional Hubs</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  <Link
+                    href="/tools/sql-tools"
+                    onClick={closeAll}
+                    className={`nav-tools-dropdown-item ${isSqlTools ? "selected" : ""}`}
+                  >
+                    <div className="nav-tool-icon-box"><Database size={15} /></div>
+                    <div className="nav-tool-text-box">
+                      <div className="nav-tool-title">SQL Tools</div>
+                      <div className="nav-tool-desc">SQLite WASM Sandbox & DDL</div>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/tools/language-tools"
+                    onClick={closeAll}
+                    className={`nav-tools-dropdown-item ${isLangTools ? "selected" : ""}`}
+                  >
+                    <div className="nav-tool-icon-box"><Code2 size={15} /></div>
+                    <div className="nav-tool-text-box">
+                      <div className="nav-tool-title">Language Tools</div>
+                      <div className="nav-tool-desc">Code Formatters & Cards</div>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/tools/electronics-tools"
+                    onClick={closeAll}
+                    className={`nav-tools-dropdown-item ${isElecTools ? "selected" : ""}`}
+                  >
+                    <div className="nav-tool-icon-box"><Cpu size={15} /></div>
+                    <div className="nav-tool-text-box">
+                      <div className="nav-tool-title">Electronics Tools</div>
+                      <div className="nav-tool-desc">11 Electronics Calculators</div>
+                    </div>
+                  </Link>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </nav>
+            )}
+          </div>
+        </nav>
+      </div>
 
       {/* Global Command Palette Modal */}
       <GlobalSearchModal
@@ -466,3 +535,4 @@ export function HeaderNav() {
     </>
   );
 }
+
