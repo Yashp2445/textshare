@@ -22,10 +22,20 @@ import {
   FolderArchive,
   Image as ImageIcon,
   FileCode,
+  Search,
+  Database,
+  Terminal,
+  Layers,
+  BookOpen,
+  Cpu,
+  Zap,
 } from "lucide-react";
+import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 
 export function HeaderNav() {
   const pathname = usePathname();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const [calcDropdownOpen, setCalcDropdownOpen] = useState(false);
   const [fileDropdownOpen, setFileDropdownOpen] = useState(false);
   const [devDropdownOpen, setDevDropdownOpen] = useState(false);
@@ -36,7 +46,22 @@ export function HeaderNav() {
 
   const isCalc = pathname.startsWith("/calculator");
   const isFileTools = pathname.startsWith("/tools/file-tools");
-  const isDevTool = pathname.startsWith("/tools/") && !isFileTools;
+  const isSqlTools = pathname.startsWith("/tools/sql-tools");
+  const isLangTools = pathname.startsWith("/tools/language-tools");
+  const isElecTools = pathname.startsWith("/tools/electronics-tools");
+  const isDevTool = pathname.startsWith("/tools/") && !isFileTools && !isSqlTools && !isLangTools && !isElecTools;
+
+  // Listen for Cmd+K / Ctrl+K global keyboard shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -73,6 +98,9 @@ export function HeaderNav() {
   ];
 
   const devTools = [
+    { href: "/tools/sql-tools", label: "SQL Tools Hub", icon: Database, desc: "In-browser SQLite WASM, ERD & format" },
+    { href: "/tools/language-tools", label: "Programming Tools Hub", icon: Code2, desc: "Formatter, minifier, Carbon & cheatsheets" },
+    { href: "/tools/electronics-tools", label: "Electronics Tools Hub", icon: Cpu, desc: "Ohm's Law, resistors, 555 & logic gates" },
     { href: "/tools/json", label: "JSON Formatter & Validator", icon: Code2, desc: "Format, validate & minify JSON" },
     { href: "/tools/color", label: "Color Picker & Palettes", icon: Palette, desc: "HEX, RGB, HSL, CMYK & palettes" },
     { href: "/tools/base64-url", label: "Base64 & URL Encoder", icon: Binary, desc: "Encode & decode strings live" },
@@ -81,193 +109,215 @@ export function HeaderNav() {
   ];
 
   return (
-    <nav className="header-segmented-nav" aria-label="Main Navigation">
-      <Link
-        href="/"
-        className={`nav-segment-item ${!isCalc && !isFileTools && !isDevTool ? "active" : ""}`}
-      >
-        <FileText size={14} />
-        <span>LivePad</span>
-      </Link>
-
-      {/* Calculator Hub Dropdown */}
-      <div className="nav-dropdown-wrapper" ref={calcDropdownRef}>
-        <div className="flex items-center">
-          <Link
-            href="/calculator"
-            className={`nav-segment-item ${isCalc ? "active" : ""}`}
-            onClick={() => {
-              setCalcDropdownOpen(false);
-              setFileDropdownOpen(false);
-              setDevDropdownOpen(false);
-            }}
-          >
-            <Calculator size={14} />
-            <span>Calculators</span>
-          </Link>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setCalcDropdownOpen((prev) => !prev);
-              setFileDropdownOpen(false);
-              setDevDropdownOpen(false);
-            }}
-            className="px-1 text-dim hover:text-main cursor-pointer"
-            aria-expanded={calcDropdownOpen}
-            aria-label="Toggle Calculator Menu"
-          >
-            <ChevronDown 
-              size={13} 
-              className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} 
-            />
-          </button>
-        </div>
-
-        {calcDropdownOpen && (
-          <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-            <div className="nav-tools-dropdown-header flex justify-between items-center">
-              <span>Calculator Suite</span>
-              <span className="text-violet font-semibold">17 Tools</span>
-            </div>
-            <div className="nav-tools-dropdown-list">
-              {calculatorHighlights.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setCalcDropdownOpen(false)}
-                    className="nav-tools-dropdown-item"
-                  >
-                    <div className="nav-tool-icon-box">
-                      <Icon size={15} />
-                    </div>
-                    <div className="nav-tool-text-box">
-                      <div className="nav-tool-title">{item.label}</div>
-                      <div className="nav-tool-desc">{item.desc}</div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* File Tools Dropdown */}
-      <div className="nav-dropdown-wrapper" ref={fileDropdownRef}>
-        <div className="flex items-center">
-          <Link
-            href="/tools/file-tools"
-            className={`nav-segment-item ${isFileTools ? "active" : ""}`}
-            onClick={() => {
-              setCalcDropdownOpen(false);
-              setFileDropdownOpen(false);
-              setDevDropdownOpen(false);
-            }}
-          >
-            <FolderArchive size={14} />
-            <span>File Tools</span>
-          </Link>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setFileDropdownOpen((prev) => !prev);
-              setCalcDropdownOpen(false);
-              setDevDropdownOpen(false);
-            }}
-            className="px-1 text-dim hover:text-main cursor-pointer"
-            aria-expanded={fileDropdownOpen}
-            aria-label="Toggle File Tools Menu"
-          >
-            <ChevronDown 
-              size={13} 
-              className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} 
-            />
-          </button>
-        </div>
-
-        {fileDropdownOpen && (
-          <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
-            <div className="nav-tools-dropdown-header flex justify-between items-center">
-              <span>File Utilities</span>
-              <span className="text-violet font-semibold">Client-Side</span>
-            </div>
-            <div className="nav-tools-dropdown-list">
-              {fileToolsList.map((tool) => {
-                const Icon = tool.icon;
-                return (
-                  <Link
-                    key={tool.href}
-                    href={tool.href}
-                    onClick={() => setFileDropdownOpen(false)}
-                    className="nav-tools-dropdown-item"
-                  >
-                    <div className="nav-tool-icon-box">
-                      <Icon size={15} />
-                    </div>
-                    <div className="nav-tool-text-box">
-                      <div className="nav-tool-title">{tool.label}</div>
-                      <div className="nav-tool-desc">{tool.desc}</div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Dev Tools Dropdown */}
-      <div className="nav-dropdown-wrapper" ref={devDropdownRef}>
+    <>
+      <nav className="header-segmented-nav" aria-label="Main Navigation">
+        {/* Global Search Button */}
         <button
           type="button"
-          onClick={() => {
-            setDevDropdownOpen((prev) => !prev);
-            setCalcDropdownOpen(false);
-            setFileDropdownOpen(false);
-          }}
-          className={`nav-segment-item ${isDevTool ? "active" : ""}`}
-          aria-expanded={devDropdownOpen}
+          onClick={() => setIsSearchOpen(true)}
+          className="nav-segment-item flex items-center gap-1.5 text-violet font-semibold hover:bg-hover"
+          title="Global Tool Search (Cmd+K / Ctrl+K)"
         >
-          <Wrench size={14} />
-          <span>Dev Tools</span>
-          <ChevronDown 
-            size={13} 
-            className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} 
-          />
+          <Search size={14} />
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-surface border border-dim rounded text-muted">
+            ⌘K
+          </kbd>
         </button>
 
-        {devDropdownOpen && (
-          <div className="nav-tools-dropdown-menu">
-            <div className="nav-tools-dropdown-header">Developer Utilities</div>
-            <div className="nav-tools-dropdown-list">
-              {devTools.map((tool) => {
-                const Icon = tool.icon;
-                const active = pathname === tool.href;
-                return (
-                  <Link
-                    key={tool.href}
-                    href={tool.href}
-                    onClick={() => setDevDropdownOpen(false)}
-                    className={`nav-tools-dropdown-item ${active ? "selected" : ""}`}
-                  >
-                    <div className="nav-tool-icon-box">
-                      <Icon size={15} />
-                    </div>
-                    <div className="nav-tool-text-box">
-                      <div className="nav-tool-title">{tool.label}</div>
-                      <div className="nav-tool-desc">{tool.desc}</div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+        <Link
+          href="/"
+          className={`nav-segment-item ${!isCalc && !isFileTools && !isDevTool && !isSqlTools && !isLangTools && !isElecTools ? "active" : ""}`}
+        >
+          <FileText size={14} />
+          <span>LivePad</span>
+        </Link>
+
+        {/* Calculator Hub Dropdown */}
+        <div className="nav-dropdown-wrapper" ref={calcDropdownRef}>
+          <div className="flex items-center">
+            <Link
+              href="/calculator"
+              className={`nav-segment-item ${isCalc ? "active" : ""}`}
+              onClick={() => {
+                setCalcDropdownOpen(false);
+                setFileDropdownOpen(false);
+                setDevDropdownOpen(false);
+              }}
+            >
+              <Calculator size={14} />
+              <span>Calculators</span>
+            </Link>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setCalcDropdownOpen((prev) => !prev);
+                setFileDropdownOpen(false);
+                setDevDropdownOpen(false);
+              }}
+              className="px-1 text-dim hover:text-main cursor-pointer"
+              aria-expanded={calcDropdownOpen}
+              aria-label="Toggle Calculator Menu"
+            >
+              <ChevronDown 
+                size={13} 
+                className={`chevron-icon ${calcDropdownOpen ? "open" : ""}`} 
+              />
+            </button>
           </div>
-        )}
-      </div>
-    </nav>
+
+          {calcDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>Calculator Suite</span>
+                <span className="text-violet font-semibold">17 Tools</span>
+              </div>
+              <div className="nav-tools-dropdown-list">
+                {calculatorHighlights.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setCalcDropdownOpen(false)}
+                      className="nav-tools-dropdown-item"
+                    >
+                      <div className="nav-tool-icon-box">
+                        <Icon size={15} />
+                      </div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{item.label}</div>
+                        <div className="nav-tool-desc">{item.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* File Tools Dropdown */}
+        <div className="nav-dropdown-wrapper" ref={fileDropdownRef}>
+          <div className="flex items-center">
+            <Link
+              href="/tools/file-tools"
+              className={`nav-segment-item ${isFileTools ? "active" : ""}`}
+              onClick={() => {
+                setCalcDropdownOpen(false);
+                setFileDropdownOpen(false);
+                setDevDropdownOpen(false);
+              }}
+            >
+              <FolderArchive size={14} />
+              <span>File Tools</span>
+            </Link>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setFileDropdownOpen((prev) => !prev);
+                setCalcDropdownOpen(false);
+                setDevDropdownOpen(false);
+              }}
+              className="px-1 text-dim hover:text-main cursor-pointer"
+              aria-expanded={fileDropdownOpen}
+              aria-label="Toggle File Tools Menu"
+            >
+              <ChevronDown 
+                size={13} 
+                className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} 
+              />
+            </button>
+          </div>
+
+          {fileDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+              <div className="nav-tools-dropdown-header flex justify-between items-center">
+                <span>File Utilities</span>
+                <span className="text-violet font-semibold">Client-Side</span>
+              </div>
+              <div className="nav-tools-dropdown-list">
+                {fileToolsList.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <Link
+                      key={tool.href}
+                      href={tool.href}
+                      onClick={() => setFileDropdownOpen(false)}
+                      className="nav-tools-dropdown-item"
+                    >
+                      <div className="nav-tool-icon-box">
+                        <Icon size={15} />
+                      </div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{tool.label}</div>
+                        <div className="nav-tool-desc">{tool.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Dev & Specialized Tools Dropdown */}
+        <div className="nav-dropdown-wrapper" ref={devDropdownRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setDevDropdownOpen((prev) => !prev);
+              setCalcDropdownOpen(false);
+              setFileDropdownOpen(false);
+            }}
+            className={`nav-segment-item ${isDevTool || isSqlTools || isLangTools || isElecTools ? "active" : ""}`}
+            aria-expanded={devDropdownOpen}
+          >
+            <Wrench size={14} />
+            <span>Dev & Electronics</span>
+            <ChevronDown 
+              size={13} 
+              className={`chevron-icon ${devDropdownOpen ? "open" : ""}`} 
+            />
+          </button>
+
+          {devDropdownOpen && (
+            <div className="nav-tools-dropdown-menu" style={{ width: "310px" }}>
+              <div className="nav-tools-dropdown-header">Developer & Engineering Suites</div>
+              <div className="nav-tools-dropdown-list">
+                {devTools.map((tool) => {
+                  const Icon = tool.icon;
+                  const active = pathname.startsWith(tool.href);
+                  return (
+                    <Link
+                      key={tool.href}
+                      href={tool.href}
+                      onClick={() => setDevDropdownOpen(false)}
+                      className={`nav-tools-dropdown-item ${active ? "selected" : ""}`}
+                    >
+                      <div className="nav-tool-icon-box">
+                        <Icon size={15} />
+                      </div>
+                      <div className="nav-tool-text-box">
+                        <div className="nav-tool-title">{tool.label}</div>
+                        <div className="nav-tool-desc">{tool.desc}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Global Command Palette Modal */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
+    </>
   );
 }
