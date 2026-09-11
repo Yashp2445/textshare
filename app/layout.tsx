@@ -4,7 +4,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VantaBackground } from "@/components/VantaBackground";
 import { HeaderNav } from "@/components/HeaderNav";
-import { Lock } from "lucide-react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -67,10 +66,6 @@ export default function RootLayout({
                   <HeaderNav />
 
                   <nav className="nav-actions">
-                    <a href="/group/create" className="btn btn-nav glow-btn">
-                      <Lock size={14} className="text-violet" />
-                      <span>Create Private Group</span>
-                    </a>
                     <ThemeToggle />
                   </nav>
                 </div>

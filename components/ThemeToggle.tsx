@@ -12,20 +12,43 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="theme-toggle-btn" aria-label="Toggle theme">
-        <Moon size={16} />
-      </button>
+      <div className="theme-toggle-pill opacity-0" aria-hidden="true">
+        <div className="theme-toggle-option" />
+        <div className="theme-toggle-option" />
+      </div>
     );
   }
 
+  const isDark = theme === "dark";
+
   return (
-    <button
-      className="theme-toggle-btn"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      title={`Switch to ${theme === "dark" ? "Light" : "Dark"} mode`}
-      aria-label="Toggle theme"
+    <div 
+      className="theme-toggle-pill" 
+      role="radiogroup" 
+      aria-label="Theme selection"
     >
-      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-    </button>
+      <button
+        type="button"
+        onClick={() => setTheme("light")}
+        className={`theme-toggle-option ${!isDark ? "active light" : ""}`}
+        title="Switch to Light theme"
+        aria-label="Light theme"
+        aria-checked={!isDark}
+        role="radio"
+      >
+        <Sun size={14} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setTheme("dark")}
+        className={`theme-toggle-option ${isDark ? "active dark" : ""}`}
+        title="Switch to Dark theme"
+        aria-label="Dark theme"
+        aria-checked={isDark}
+        role="radio"
+      >
+        <Moon size={14} />
+      </button>
+    </div>
   );
 }

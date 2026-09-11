@@ -22,7 +22,6 @@ import {
   FolderArchive,
   Image as ImageIcon,
   FileCode,
-  Search,
   Database,
   Terminal,
   Layers,
@@ -35,11 +34,9 @@ import {
   FileSearch,
   FileCheck,
 } from "lucide-react";
-import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 
 export function HeaderNav() {
   const pathname = usePathname();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const [calcDropdownOpen, setCalcDropdownOpen] = useState(false);
   const [fileDropdownOpen, setFileDropdownOpen] = useState(false);
@@ -64,18 +61,6 @@ export function HeaderNav() {
   const isLangTools = pathname.startsWith("/tools/language-tools");
   const isElecTools = pathname.startsWith("/tools/electronics-tools");
   const isDevTools = pathname.startsWith("/tools/dev-tools") || pathname === "/tools/json" || pathname === "/tools/color" || pathname === "/tools/base64-url" || pathname === "/tools/jwt" || pathname === "/tools/bcrypt";
-
-  // Listen for Cmd+K / Ctrl+K global keyboard shortcut
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setIsSearchOpen((prev) => !prev);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -160,25 +145,8 @@ export function HeaderNav() {
   ];
 
   return (
-    <>
-      <div className="flex items-center gap-3">
-        {/* Distinct Search Field Trigger Button */}
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(true)}
-          className="nav-search-trigger-btn"
-          title="Global Tool Search (Cmd+K / Ctrl+K)"
-        >
-          <Search size={15} className="text-violet flex-shrink-0" />
-          <span className="hidden md:inline font-medium">Search tools...</span>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-surface border border-dim rounded text-muted">
-            ⌘K
-          </kbd>
-        </button>
-
-        {/* Cohesive Segmented Glass Navigation Bar */}
-        <nav className="header-segmented-nav" aria-label="Main Navigation">
-          {/* LivePad Link Segment */}
+    <nav className="header-segmented-nav" aria-label="Main Navigation">
+      {/* LivePad Link Segment */}
           <Link
             href="/"
             className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools ? "active" : ""}`}
@@ -525,14 +493,6 @@ export function HeaderNav() {
             )}
           </div>
         </nav>
-      </div>
-
-      {/* Global Command Palette Modal */}
-      <GlobalSearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-      />
-    </>
   );
 }
 
