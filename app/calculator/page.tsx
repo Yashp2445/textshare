@@ -1,10 +1,10 @@
-import { ScientificCalculator } from "@/components/ScientificCalculator";
+import { CalculatorHub } from "@/components/CalculatorHub";
 
 export const metadata = {
-  title: "Scientific Calculator — LiveShare",
-  description: "Desmos-grade scientific calculator with trigonometric functions, logarithms, exponents, parentheses, and calculation history.",
+  title: "Calculator Hub — 17 Free Online Calculators | LiveShare",
+  description: "Comprehensive online calculator suite including Scientific, EMI, SIP, Loan Eligibility, GST, Salary, BMI, Age, Unit Converter, and financial calculators with live real-time updates.",
 };
 
 export default function CalculatorPage() {
-  return <ScientificCalculator />;
+  return <CalculatorHub />;
 }
