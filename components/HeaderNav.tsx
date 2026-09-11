@@ -18,25 +18,34 @@ import {
   TrendingUp,
   Activity,
   Percent,
-  Scale
+  Scale,
+  FolderArchive,
+  Image as ImageIcon,
+  FileCode,
 } from "lucide-react";
 
 export function HeaderNav() {
   const pathname = usePathname();
   const [calcDropdownOpen, setCalcDropdownOpen] = useState(false);
+  const [fileDropdownOpen, setFileDropdownOpen] = useState(false);
   const [devDropdownOpen, setDevDropdownOpen] = useState(false);
 
   const calcDropdownRef = useRef<HTMLDivElement>(null);
+  const fileDropdownRef = useRef<HTMLDivElement>(null);
   const devDropdownRef = useRef<HTMLDivElement>(null);
 
   const isCalc = pathname.startsWith("/calculator");
-  const isTool = pathname.startsWith("/tools");
+  const isFileTools = pathname.startsWith("/tools/file-tools");
+  const isDevTool = pathname.startsWith("/tools/") && !isFileTools;
 
   // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (calcDropdownRef.current && !calcDropdownRef.current.contains(e.target as Node)) {
         setCalcDropdownOpen(false);
+      }
+      if (fileDropdownRef.current && !fileDropdownRef.current.contains(e.target as Node)) {
+        setFileDropdownOpen(false);
       }
       if (devDropdownRef.current && !devDropdownRef.current.contains(e.target as Node)) {
         setDevDropdownOpen(false);
@@ -56,6 +65,13 @@ export function HeaderNav() {
     { href: "/calculator?calc=unit", label: "Unit Converter", icon: Scale, desc: "Length, weight, temp & speed" },
   ];
 
+  const fileToolsList = [
+    { href: "/tools/file-tools", label: "File Tools Hub", icon: FolderArchive, desc: "Client-side processing suite" },
+    { href: "/tools/file-tools?tool=image", label: "Image Compressor & Convert", icon: ImageIcon, desc: "PNG, JPG, WebP with quality slider" },
+    { href: "/tools/file-tools?tool=csv-json", label: "CSV ↔ JSON Converter", icon: FileCode, desc: "Bi-directional parsing & format" },
+    { href: "/tools/file-tools?tool=doc-pdf", label: "Document to PDF Utility", icon: FileText, desc: "Local document exporter & notice" },
+  ];
+
   const devTools = [
     { href: "/tools/json", label: "JSON Formatter & Validator", icon: Code2, desc: "Format, validate & minify JSON" },
     { href: "/tools/color", label: "Color Picker & Palettes", icon: Palette, desc: "HEX, RGB, HSL, CMYK & palettes" },
@@ -68,7 +84,7 @@ export function HeaderNav() {
     <nav className="header-segmented-nav" aria-label="Main Navigation">
       <Link
         href="/"
-        className={`nav-segment-item ${!isCalc && !isTool ? "active" : ""}`}
+        className={`nav-segment-item ${!isCalc && !isFileTools && !isDevTool ? "active" : ""}`}
       >
         <FileText size={14} />
         <span>LivePad</span>
@@ -80,7 +96,11 @@ export function HeaderNav() {
           <Link
             href="/calculator"
             className={`nav-segment-item ${isCalc ? "active" : ""}`}
-            onClick={() => setCalcDropdownOpen(false)}
+            onClick={() => {
+              setCalcDropdownOpen(false);
+              setFileDropdownOpen(false);
+              setDevDropdownOpen(false);
+            }}
           >
             <Calculator size={14} />
             <span>Calculators</span>
@@ -90,6 +110,7 @@ export function HeaderNav() {
             onClick={(e) => {
               e.preventDefault();
               setCalcDropdownOpen((prev) => !prev);
+              setFileDropdownOpen(false);
               setDevDropdownOpen(false);
             }}
             className="px-1 text-dim hover:text-main cursor-pointer"
@@ -134,6 +155,71 @@ export function HeaderNav() {
         )}
       </div>
 
+      {/* File Tools Dropdown */}
+      <div className="nav-dropdown-wrapper" ref={fileDropdownRef}>
+        <div className="flex items-center">
+          <Link
+            href="/tools/file-tools"
+            className={`nav-segment-item ${isFileTools ? "active" : ""}`}
+            onClick={() => {
+              setCalcDropdownOpen(false);
+              setFileDropdownOpen(false);
+              setDevDropdownOpen(false);
+            }}
+          >
+            <FolderArchive size={14} />
+            <span>File Tools</span>
+          </Link>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setFileDropdownOpen((prev) => !prev);
+              setCalcDropdownOpen(false);
+              setDevDropdownOpen(false);
+            }}
+            className="px-1 text-dim hover:text-main cursor-pointer"
+            aria-expanded={fileDropdownOpen}
+            aria-label="Toggle File Tools Menu"
+          >
+            <ChevronDown 
+              size={13} 
+              className={`chevron-icon ${fileDropdownOpen ? "open" : ""}`} 
+            />
+          </button>
+        </div>
+
+        {fileDropdownOpen && (
+          <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+            <div className="nav-tools-dropdown-header flex justify-between items-center">
+              <span>File Utilities</span>
+              <span className="text-violet font-semibold">Client-Side</span>
+            </div>
+            <div className="nav-tools-dropdown-list">
+              {fileToolsList.map((tool) => {
+                const Icon = tool.icon;
+                return (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    onClick={() => setFileDropdownOpen(false)}
+                    className="nav-tools-dropdown-item"
+                  >
+                    <div className="nav-tool-icon-box">
+                      <Icon size={15} />
+                    </div>
+                    <div className="nav-tool-text-box">
+                      <div className="nav-tool-title">{tool.label}</div>
+                      <div className="nav-tool-desc">{tool.desc}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Dev Tools Dropdown */}
       <div className="nav-dropdown-wrapper" ref={devDropdownRef}>
         <button
@@ -141,8 +227,9 @@ export function HeaderNav() {
           onClick={() => {
             setDevDropdownOpen((prev) => !prev);
             setCalcDropdownOpen(false);
+            setFileDropdownOpen(false);
           }}
-          className={`nav-segment-item ${isTool ? "active" : ""}`}
+          className={`nav-segment-item ${isDevTool ? "active" : ""}`}
           aria-expanded={devDropdownOpen}
         >
           <Wrench size={14} />
