@@ -43,6 +43,7 @@ import {
   QrCode,
   FileSearch,
   Lock,
+  Download,
 } from "lucide-react";
 
 export interface ToolRegistryItem {
@@ -530,6 +531,16 @@ export const ALL_TOOLS: ToolRegistryItem[] = [
     description: "Random secure password generator with strength rating meter",
     href: "/tools/dev-tools?tool=password",
     keywords: ["password", "generate", "security", "random", "secret"],
+  },
+  // Downloaders (1)
+  {
+    id: "dl-instagram",
+    name: "Instagram Downloader",
+    category: "Downloader Tools",
+    icon: Download,
+    description: "Download public reels, posts, and profile pictures from Instagram",
+    href: "/tools/downloader-tools?tool=instagram",
+    keywords: ["instagram", "download", "reel", "post", "video", "photo", "profile", "picture", "save", "ig"],
   },
 ];
 

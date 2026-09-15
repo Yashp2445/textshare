@@ -33,6 +33,7 @@ import {
   Lock,
   FileSearch,
   FileCheck,
+  Download,
 } from "lucide-react";
 
 export function HeaderNav() {
@@ -44,6 +45,7 @@ export function HeaderNav() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [elecDropdownOpen, setElecDropdownOpen] = useState(false);
   const [devDropdownOpen, setDevDropdownOpen] = useState(false);
+  const [downloaderDropdownOpen, setDownloaderDropdownOpen] = useState(false);
 
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
 
@@ -53,6 +55,7 @@ export function HeaderNav() {
   const langRef = useRef<HTMLDivElement>(null);
   const elecRef = useRef<HTMLDivElement>(null);
   const devRef = useRef<HTMLDivElement>(null);
+  const downloaderRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
   const isCalc = pathname.startsWith("/calculator");
@@ -60,6 +63,7 @@ export function HeaderNav() {
   const isSqlTools = pathname.startsWith("/tools/sql-tools");
   const isLangTools = pathname.startsWith("/tools/language-tools");
   const isElecTools = pathname.startsWith("/tools/electronics-tools");
+  const isDownloaderTools = pathname.startsWith("/tools/downloader-tools");
   const isDevTools = pathname.startsWith("/tools/dev-tools") || pathname === "/tools/json" || pathname === "/tools/color" || pathname === "/tools/base64-url" || pathname === "/tools/jwt" || pathname === "/tools/bcrypt";
 
   // Close dropdowns on click outside
@@ -71,6 +75,7 @@ export function HeaderNav() {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangDropdownOpen(false);
       if (elecRef.current && !elecRef.current.contains(e.target as Node)) setElecDropdownOpen(false);
       if (devRef.current && !devRef.current.contains(e.target as Node)) setDevDropdownOpen(false);
+      if (downloaderRef.current && !downloaderRef.current.contains(e.target as Node)) setDownloaderDropdownOpen(false);
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreDropdownOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -84,6 +89,7 @@ export function HeaderNav() {
     setLangDropdownOpen(false);
     setElecDropdownOpen(false);
     setDevDropdownOpen(false);
+    setDownloaderDropdownOpen(false);
     setMoreDropdownOpen(false);
   };
 
@@ -144,12 +150,17 @@ export function HeaderNav() {
     { href: "/tools/dev-tools?tool=lorem", label: "Lorem Ipsum Generator", icon: FileText, desc: "Placeholder text generator" },
   ];
 
+  const downloaderToolsList = [
+    { href: "/tools/downloader-tools", label: "Downloader Hub", icon: Download, desc: "Explore all downloaders" },
+    { href: "/tools/downloader-tools?tool=instagram", label: "Instagram Downloader", icon: Download, desc: "Download public reels, posts, & profile pictures" },
+  ];
+
   return (
     <nav className="header-segmented-nav" aria-label="Main Navigation">
       {/* LivePad Link Segment */}
           <Link
             href="/"
-            className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools ? "active" : ""}`}
+            className={`nav-segment-item ${!isCalc && !isFileTools && !isSqlTools && !isLangTools && !isElecTools && !isDevTools && !isDownloaderTools ? "active" : ""}`}
           >
             <FileText size={14} />
             <span>LivePad</span>
@@ -432,6 +443,52 @@ export function HeaderNav() {
             )}
           </div>
 
+          {/* Downloader Tools Dropdown Segment */}
+          <div className="nav-dropdown-wrapper" ref={downloaderRef}>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !downloaderDropdownOpen;
+                closeAll();
+                setDownloaderDropdownOpen(next);
+              }}
+              className={`nav-segment-item ${isDownloaderTools ? "active" : ""}`}
+              aria-expanded={downloaderDropdownOpen}
+            >
+              <Download size={14} />
+              <span>Downloader</span>
+              <ChevronDown size={13} className={`chevron-icon ${downloaderDropdownOpen ? "open" : ""}`} />
+            </button>
+
+            {downloaderDropdownOpen && (
+              <div className="nav-tools-dropdown-menu" style={{ width: "300px" }}>
+                <div className="nav-tools-dropdown-header flex justify-between items-center">
+                  <span>Downloader Suite</span>
+                  <span className="text-violet font-semibold">Media</span>
+                </div>
+                <div className="nav-tools-dropdown-list">
+                  {downloaderToolsList.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeAll}
+                        className="nav-tools-dropdown-item"
+                      >
+                        <div className="nav-tool-icon-box"><Icon size={15} /></div>
+                        <div className="nav-tool-text-box">
+                          <div className="nav-tool-title">{tool.label}</div>
+                          <div className="nav-tool-desc">{tool.desc}</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Responsive Overflow 'More' Dropdown Segment (< 1280px) */}
           <div className="xl:hidden nav-dropdown-wrapper" ref={moreRef}>
             <button
@@ -441,7 +498,7 @@ export function HeaderNav() {
                 closeAll();
                 setMoreDropdownOpen(next);
               }}
-              className={`nav-segment-item ${isSqlTools || isLangTools || isElecTools ? "active" : ""}`}
+              className={`nav-segment-item ${isSqlTools || isLangTools || isElecTools || isDownloaderTools ? "active" : ""}`}
               aria-expanded={moreDropdownOpen}
             >
               <Wrench size={14} />
@@ -486,6 +543,17 @@ export function HeaderNav() {
                     <div className="nav-tool-text-box">
                       <div className="nav-tool-title">Electronics Tools</div>
                       <div className="nav-tool-desc">11 Electronics Calculators</div>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/tools/downloader-tools"
+                    onClick={closeAll}
+                    className={`nav-tools-dropdown-item ${isDownloaderTools ? "selected" : ""}`}
+                  >
+                    <div className="nav-tool-icon-box"><Download size={15} /></div>
+                    <div className="nav-tool-text-box">
+                      <div className="nav-tool-title">Downloader Tools</div>
+                      <div className="nav-tool-desc">Social Media Downloaders</div>
                     </div>
                   </Link>
                 </div>

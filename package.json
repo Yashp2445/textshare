@@ -11,6 +11,8 @@
   "dependencies": {
     "@types/three": "^0.185.4",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
+    "instagram-url-direct": "^2.0.7",
     "jose": "^6.2.12",
     "lucide-react": "^1.44.0",
     "multer": "^2.3.0",
