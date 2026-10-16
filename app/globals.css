@@ -4,31 +4,31 @@
    ============================================================ */
 
 :root {
-  /* Dark Theme Neutral Tokens */
-  --bg-app: #0a0b10;
-  --bg-surface: #12151f;
-  --bg-subtle: #181c2a;
-  --bg-hover: #1f2436;
-  --bg-input: #0e1017;
+  /* Dark Theme Violet Palette */
+  --bg-app: #06070a;
+  --bg-surface: rgba(18, 22, 32, 0.88);
+  --bg-subtle: rgba(24, 28, 42, 0.78);
+  --bg-hover: rgba(36, 43, 64, 0.82);
+  --bg-input: rgba(12, 14, 20, 0.78);
 
-  --border-dim: #23283b;
-  --border-subtle: #1d2232;
-  --border-focus: #434c6b;
+  --border-dim: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-focus: rgba(168, 85, 247, 0.45);
 
   --text-main: #f8fafc;
   --text-dim: #94a3b8;
   --text-muted: #64748b;
 
-  /* Single Restrained Accent */
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-subtle: rgba(99, 102, 241, 0.12);
+  /* Violet Accent */
+  --accent: #a855f7;
+  --accent-hover: #9333ea;
+  --accent-subtle: rgba(168, 85, 247, 0.16);
   --accent-text: #ffffff;
 
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-  --error-subtle: rgba(239, 68, 68, 0.12);
+  --error-subtle: rgba(239, 68, 68, 0.15);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -38,9 +38,9 @@
   --radius-lg: 14px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.65);
 
   --transition-fast: 120ms ease;
   --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -48,33 +48,33 @@
 
 /* ── Light Theme Overrides ── */
 [data-theme="light"] {
-  --bg-app: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-subtle: #f1f5f9;
-  --bg-hover: #e2e8f0;
-  --bg-input: #ffffff;
+  --bg-app: #f7f6f4;
+  --bg-surface: rgba(255, 255, 255, 0.92);
+  --bg-subtle: rgba(241, 239, 233, 0.85);
+  --bg-hover: rgba(230, 227, 216, 0.9);
+  --bg-input: rgba(255, 255, 255, 0.95);
 
-  --border-dim: #e2e8f0;
-  --border-subtle: #edf2f7;
-  --border-focus: #cbd5e1;
+  --border-dim: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-focus: rgba(124, 58, 237, 0.35);
 
   --text-main: #0f172a;
   --text-dim: #475569;
   --text-muted: #94a3b8;
 
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-subtle: rgba(79, 70, 229, 0.08);
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-subtle: rgba(124, 58, 237, 0.12);
   --accent-text: #ffffff;
 
   --success: #059669;
   --warning: #d97706;
   --error: #dc2626;
-  --error-subtle: rgba(220, 38, 38, 0.08);
+  --error-subtle: rgba(220, 38, 38, 0.1);
 
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.14);
 }
 
 *, *::before, *::after {
@@ -120,8 +120,20 @@ button, input, textarea {
   color: var(--text-muted) !important;
 }
 
+/* ── Vanta Animated Fog Background Container ── */
+.vanta-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.65;
+  transition: opacity 300ms ease;
+}
+
 /* ── App Shell ── */
 .app {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -131,6 +143,8 @@ button, input, textarea {
   height: 56px;
   border-bottom: 1px solid var(--border-dim);
   background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -291,6 +305,8 @@ button, input, textarea {
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   overflow: hidden;
   transition: border-color var(--transition);
 }
