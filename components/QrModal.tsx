@@ -32,8 +32,8 @@ export function QrModal({ isOpen, onClose, url, roomId, accessCode }: QrModalPro
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">
-            <QrCode size={18} className="text-amber" />
-            <span>Scan or Share Room</span>
+            <QrCode size={18} className="text-violet" />
+            <span>Share Room {roomId && `(${roomId})`}</span>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">
             <X size={16} />

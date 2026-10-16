@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Dock, DockItem, DockSeparator } from "@/components/animated-dock";
 import { Copy, Trash2, Download, QrCode, Lock, Check } from "lucide-react";
 
@@ -72,16 +73,15 @@ export function DockBar({
         <QrCode className="h-5 w-5 text-violet" />
       </DockItem>
 
-      <DockItem
-        label="New Private Room"
-        active={activeTab === "private"}
-        onClick={() => {
-          setActiveTab("private");
-          window.location.href = "/group/create";
-        }}
-      >
-        <Lock className="h-5 w-5" />
-      </DockItem>
+      <Link href="/group/create" aria-label="New Private Room">
+        <DockItem
+          label="New Private Room"
+          active={activeTab === "private"}
+          onClick={() => setActiveTab("private")}
+        >
+          <Lock className="h-5 w-5" />
+        </DockItem>
+      </Link>
     </Dock>
   );
 }

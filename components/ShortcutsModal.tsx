@@ -23,7 +23,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">
-            <Keyboard size={18} className="text-amber" />
+            <Keyboard size={18} className="text-violet" />
             <span>Keyboard Shortcuts</span>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">

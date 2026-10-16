@@ -51,7 +51,7 @@ export default function CreateGroupPage() {
       <div className="center-wrapper">
         <div className="form-card private-group-card">
           <div className="card-accent-badge">
-            <Lock size={20} className="text-amber" />
+            <Lock size={20} className="text-violet" />
           </div>
           <h1>Private Group Ready</h1>
           <p>Share this access code or QR code with your group. Scanning takes them directly to the join screen.</p>
@@ -73,7 +73,7 @@ export default function CreateGroupPage() {
               />
             </div>
             <div className="group-qr-hint">
-              <QrCode size={14} className="text-amber" />
+              <QrCode size={14} className="text-violet" />
               <span>Scan to open Join screen with code prefilled</span>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function CreateGroupPage() {
     <div className="center-wrapper">
       <div className="form-card">
         <div className="card-accent-badge">
-          <Lock size={20} className="text-amber" />
+          <Lock size={20} className="text-violet" />
         </div>
         <h1>Create Private Group</h1>
         <p>Generate a password-protected, isolated live session. Only people with your generated code or QR code can join.</p>
